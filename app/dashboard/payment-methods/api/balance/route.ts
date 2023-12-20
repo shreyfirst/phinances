@@ -12,14 +12,14 @@
 //   PlaidError,
 //   Products,
 // } from "plaid";
-// import { NextRequest } from 'next/server';
+import { NextRequest } from 'next/server';
 // import { cookies } from 'next/headers'
 // import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 // import { AuthResponse } from '@supabase/supabase-js';
 
-// export async function GET(
-//   request: NextRequest
-// ) {
+export async function GET(
+  request: NextRequest
+) {
 
 //   const cookieStore = cookies()
 //   const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
@@ -67,4 +67,4 @@
 //   }
 
 
-// }
+}

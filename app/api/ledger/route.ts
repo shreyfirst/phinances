@@ -1,6 +1,6 @@
 // import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 // import { cookies } from "next/headers";
-// import { NextRequest } from "next/server";
+import { NextRequest } from "next/server";
 // import md5 from 'crypto-js/md5';
 
 // export async function POST(request: NextRequest) {
@@ -40,7 +40,7 @@
 
 // }
 
-// export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest) {
 
 //     const cookieStore = cookies()
 //     const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
@@ -63,4 +63,4 @@
 //         return Response.json({}, {status: 404})
 //     }
 
-// }
+}

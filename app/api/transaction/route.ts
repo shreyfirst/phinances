@@ -40,7 +40,7 @@ import md5 from 'crypto-js/md5';
 
 // }
 
-// export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest) {
 
 //     const cookieStore = cookies()
 //     const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
@@ -63,4 +63,4 @@ import md5 from 'crypto-js/md5';
 //         return Response.json({}, {status: 404})
 //     }
 
-// }
+}
