@@ -1,113 +1,119 @@
-import Image from 'next/image'
+'use client'
+import React, { useRef, useState } from 'react';
+import { TextInput, Paper, Title, Text, Container, Button, PinInput, InputLabel, InputWrapper } from '@mantine/core';
+import { createClient } from '@/supabase/client';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
-export default function Home() {
+// Initialize Supabase client
+const supabase = createClient()
+function phoneFormat(input) {
+  input = input.replace(/\D/g, '');
+  var size = input.length;
+  if (size > 0) { input = "(" + input }
+  if (size > 3) { input = input.slice(0, 4) + ") " + input.slice(4, 11) }
+  if (size > 6) { input = input.slice(0, 9) + "-" + input.slice(9) }
+  return input;
+}
+
+export default function Login() {
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [errors, setErrors] = useState({
+    "phoneNumber": false,
+    "otp": false,
+    "loading": false
+  })
+  const router = useRouter()
+
+  const sendOtp = async (e) => {
+    e.preventDefault();
+    setErrors({ ...errors, loading: true });
+    const { data, error } = await supabase.auth.signInWithOtp({ phone: `1${phoneNumber.replace(/\D/g, '')}` });
+    if (error) setErrors({ ...errors, phoneNumber: true, loading: false });
+    else {
+      setOtpSent(true);
+      setErrors({ ...errors, loading: false });
+    }
+  };
+
+  const verifyOtp = async (e) => {
+    e.preventDefault();
+    setErrors({ ...errors, loading: true });
+    const { data, error } = await supabase.auth.verifyOtp({ phone: `1${phoneNumber.replace(/\D/g, '')}`, token: otp, type: "sms" });
+    if (error) setErrors({ ...errors, otp: true, loading: false });
+    else {
+      router.push('/dashboard/overview')
+      setErrors({ ...errors, loading: false });
+    }
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+    <Container size={420} my={40}>
+      <Title ta="center">
+        Phinances Portal
+      </Title>
+      <Text c="dimmed" size="sm" ta="center" mt={5}>
+        Your central hub for everything money related for <br /><b>Phi Delta Theta: California Epsilon</b>
+      </Text>
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+      <Paper withBorder shadow="md" p={30} my={30} radius="md">
+        <form>
+          <TextInput
+            // ref={otp_ref}
+            leftSection={
+              <Text size='sm'>+1</Text>
+            }
+            label="Phone number"
+            placeholder="(800) 273-8255"
+            value={phoneNumber}
+            type='tel'
+            onChange={(e) => {
+              setErrors({ ...errors, phoneNumber: false });
+              setPhoneNumber(phoneFormat(e.target.value))
+            }}
+            {...(errors.phoneNumber ? { error: 'This phone number is invalid' } : {})}
+            required
+          />
+          {otpSent && (
 
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+            <InputWrapper
+              label="Enter your verification code"
+              required
+              {...(errors.otp ? { error: "This one-time passcode is invalid" } : {})}
+              mt='sm'>
+              <PinInput
+                autoFocus
+                length={6}
+                placeholder="○"
+                value={otp}
+                onChange={(e) => {
+                  setErrors({ ...errors, otp: false });
+                  setOtp(e)
+                }}
+                oneTimeCode={true}
+              />
+            </InputWrapper>
+          )}
+          {!otpSent ? (
+            <Button fullWidth mt="sm" type='submit' onClick={sendOtp}
+              {...(errors.loading ? { loading: true } : {})}
+            >
+              Send OTP
+            </Button>
+          ) : (
+            <Button fullWidth mt="sm" type='submit' onClick={verifyOtp}
+              {...(errors.loading ? { loading: true } : {})}
+            >
+              Verify OTP
+            </Button>
+          )}
+        </form>
+    
+        {/* <Link href="/signup"><Text size="xs" className={"text-center"} mt={16}>Don't have an account? <Text span c='blue'>Sign up here.</Text></Text></Link> */}
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  )
+      </Paper>
+    </Container >
+  );
 }
