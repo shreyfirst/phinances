@@ -109,12 +109,12 @@ export default function Dashboard() {
                     >
                         <Stack mt={8} gap={"xs"}>
                             {bankAccounts.map((item) => (
-                                <Radio value={item.id} label={`${item.description} (...${item.mask})`} />
+                                <Radio key={item.id} value={item.id} label={`${item.description} (...${item.mask})`} />
                             ))}
                         </Stack>
                     </Radio.Group>
 
-                    { (paymentFormData.values.balance_verify ? (<Text>We're verifying your bank balance</Text>) : (<> </>)) }
+                    { (paymentFormData.values.balance_verify ? (<Text>We&apos;re verifying your bank balance</Text>) : (<> </>)) }
 
 
 
@@ -128,7 +128,7 @@ export default function Dashboard() {
             <Title order={3}>Manage your account</Title>
 
             {regForm ? (<form onSubmit={regFormData.onSubmit((data) => { submitDataForm(data) })}>
-                <Text mb={12}>We're missing some of your information.</Text>
+                <Text mb={12}>We&apos;re missing some of your information.</Text>
                 <div className='flex gap-4 mb-2'>
                     <TextInput label="First name" placeholder="" {...regFormData.getInputProps('first_name')} />
                     <TextInput label="Last name" placeholder="" {...regFormData.getInputProps('last_name')} />
