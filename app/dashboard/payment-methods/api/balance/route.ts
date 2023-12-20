@@ -65,6 +65,7 @@ export async function GET(
 //     // handle error
 //     console.log(error);
 //   }
+    return Response.json({})
 
 
 }

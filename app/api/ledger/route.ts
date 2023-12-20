@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
 //             balance: account.balance
 //         })
 //     } else {
-//         return Response.json({}, {status: 404})
+        return Response.json({})
 //     }
 
 }
