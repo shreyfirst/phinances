@@ -7,10 +7,12 @@ import Link from 'next/link';
 import { Modal } from '@mantine/core';
 import { isEmail, isNotEmpty, useForm } from '@mantine/form';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useRouter } from 'next/navigation';
 
 const data = [
     { label: 'Home', description: 'Pay your dues', url: '/dashboard/overview' },
     { label: 'Payment methods', description: 'Connect a bank', url: '/dashboard/payment-methods' },
+    { label: 'Sign out', description: '', url: '/dashboard/signout' },
     // { label: 'Payment history', description: 'See past payments', url: '/dashboard/1' },
 ];
 
@@ -22,6 +24,7 @@ export default function Demo({
     const [opened, { toggle }] = useDisclosure();
     const [active, setActive] = useState(0);
     const supabase = createClientComponentClient()
+    const router = useRouter()
 
     useEffect(() => {
         if (window.location.href)
@@ -30,6 +33,8 @@ export default function Demo({
                     setActive(index);
                 }
             });
+        router.prefetch('/dashboard/payment-methods')
+        router.prefetch('/dashboard/overview')
     }, [])
 
     const items = data.map((item, index) => (

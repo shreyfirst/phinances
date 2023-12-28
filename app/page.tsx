@@ -26,6 +26,7 @@ export default function Login() {
     "loading": false
   })
   const router = useRouter()
+  router.prefetch('/dashboard/overview')
 
   const sendOtp = async (e) => {
     e.preventDefault();
