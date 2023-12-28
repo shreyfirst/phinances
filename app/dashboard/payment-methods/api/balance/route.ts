@@ -21,7 +21,7 @@ import Increase from 'increase';
 
 const increase = new Increase({
   apiKey: process.env['INCREASE_API_KEY'], // This is the default and can be omitted
-  environment: 'sandbox', // defaults to 'production'
+  environment: (process.env['ENVIRONMENT'] == 'production' ? 'production' : 'sandbox'), // defaults to 'production'
 });
 
 export async function POST(

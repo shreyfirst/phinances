@@ -55,11 +55,11 @@ export async function GET(
   const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
 
   const configuration = new Configuration({
-    basePath: PlaidEnvironments.sandbox,
+    basePath: PlaidEnvironments[(process.env['ENVIRONMENT'] == 'production' ? 'production' : 'sandbox')],
     baseOptions: {
       headers: {
         "PLAID-CLIENT-ID": process.env.PLAID_CLIENT_ID,
-        "PLAID-SECRET": process.env.PLAID_SANDBOX_SECRET,
+        "PLAID-SECRET": process.env.PLAID_SECRET,
       },
     },
   });
