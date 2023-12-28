@@ -23,8 +23,7 @@ export default function Demo({
 }) {
     const [opened, { toggle }] = useDisclosure();
     const [active, setActive] = useState(0);
-    const supabase = createClientComponentClient()
-    const router = useRouter()
+
     const path = usePathname()
 
     useEffect(() => {
