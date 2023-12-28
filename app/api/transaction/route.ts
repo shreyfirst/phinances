@@ -86,20 +86,28 @@ export async function POST(
 
     const bank_account = await supa.from('bank_accounts').select().eq("id", body.bank_account_id)
     const bank_numbers = await supa.from('bank_numbers').select().eq("id", bank_account.data[0].numbers)
-
-    const payment = await increase.achTransfers.create({
-      // account_id: "account_1n7cmbcqo8a98f5xirzz",
-      account_id: process.env["INCREASE_ARAP_ACCOUNT"],
-      amount: body.amount,
-      statement_descriptor: body.description,
-      account_number: bank_numbers.data[0].account_number,
-      routing_number: bank_numbers.data[0].routing_number,
-    //   unique_identifier: "" + body.transaction_id
+   
+    const routing = await increase.routingNumbers.list({
+      routing_number: "110000000"//bank_numbers.data[0].routing_number
+    }).then((res)=>{
+      return res.data
     })
 
-    const transaction = await supa.from('ledger_transactions').update({ credit_amount: Math.abs(body.amount) }).eq('id', body.transaction_id).select()
+    if ((routing.length > 0 && routing[0].ach_transfers == "supported") || process.env.ENVIRONMENT == "sandbox"){
+      const payment = await increase.achTransfers.create({
+        // account_id: "account_1n7cmbcqo8a98f5xirzz",
+        account_id: process.env["INCREASE_ARAP_ACCOUNT"],
+        amount: body.amount,
+        statement_descriptor: body.description,
+        account_number: bank_numbers.data[0].account_number,
+        routing_number: bank_numbers.data[0].routing_number,
+      //   unique_identifier: "" + body.transaction_id
+      })
+      const transaction = await supa.from('ledger_transactions').update({ credit_amount: Math.abs(body.amount) }).eq('id', body.transaction_id).select()
+      return Response.json(transaction)
+    } else {
+      return Response.json({})
+    }
 
-    // console.log(2,payment)
-
-    return Response.json(transaction)
+    
 }

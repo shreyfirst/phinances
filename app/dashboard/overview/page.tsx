@@ -81,7 +81,8 @@ export default function Dashboard() {
 
     const submitDataForm = async (dataFormValues) => {
         setErrors({ ...errors, ledger_loading: true })
-        const { data, error } = await supabase.from('ledger_accounts').insert(dataFormValues).select()
+        await supabase.from('ledger_accounts').insert(dataFormValues)
+        const { data, error } = await supabase.from('ledger_accounts').select()
         console.log(1, data, 2, error)
 
         if (data) {

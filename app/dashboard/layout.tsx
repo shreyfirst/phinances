@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Modal } from '@mantine/core';
 import { isEmail, isNotEmpty, useForm } from '@mantine/form';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 const data = [
     { label: 'Home', description: 'Pay your dues', url: '/dashboard/overview' },
@@ -25,11 +25,12 @@ export default function Demo({
     const [active, setActive] = useState(0);
     const supabase = createClientComponentClient()
     const router = useRouter()
+    const path = usePathname()
 
     useEffect(() => {
-        if (window.location.href)
+        if (path)
             data.forEach((item, index) => {
-                if (window.location.href.includes(item.url)) {
+                if (path.includes(item.url)) {
                     setActive(index);
                 }
             });

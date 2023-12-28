@@ -1,4 +1,5 @@
 'use client';
+import { LoadingOverlay } from "@mantine/core";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
@@ -13,6 +14,12 @@ export default function SignOut() {
         router.push('/')
     },[router])
 
-    return (<div>/</div>)
+    return (<div>
+        <LoadingOverlay
+            visible
+            w={"100%"}
+            h={"100%"}
+        />
+    </div>)
 
 }
