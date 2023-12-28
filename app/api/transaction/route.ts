@@ -89,7 +89,7 @@ export async function POST(
 
     const payment = await increase.achTransfers.create({
       // account_id: "account_1n7cmbcqo8a98f5xirzz",
-      account_id: "sandbox_account_nvt6azfnf9pdnxxwvrnn",
+      account_id: process.env["INCREASE_ARAP_ACCOUNT"],
       amount: body.amount,
       statement_descriptor: body.description,
       account_number: bank_numbers.data[0].account_number,
