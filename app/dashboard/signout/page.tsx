@@ -6,15 +6,13 @@ import { useEffect } from "react"
 export default function SignOut() {
     
     const supabase = createClientComponentClient()
-    supabase.auth.signOut()
     const router = useRouter()
 
     useEffect(()=>{
-        if (router) {
-            router.push('/')
-        }
-    }, [router])
+        supabase.auth.signOut()
+        router.push('/')
+    },[router])
 
-    return (<></>)
+    return (<div>/</div>)
 
 }

@@ -33,8 +33,8 @@ export default function Demo({
                     setActive(index);
                 }
             });
-        router.prefetch('/dashboard/payment-methods')
-        router.prefetch('/dashboard/overview')
+        // router.prefetch('/dashboard/payment-methods')
+        // router.prefetch('/dashboard/overview')
     }, [])
 
     const items = data.map((item, index) => (
