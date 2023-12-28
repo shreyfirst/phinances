@@ -7,6 +7,7 @@ import { isEmail, isNotEmpty, useForm } from '@mantine/form';
 import { title } from 'process';
 import { IconBuildingBank, IconChevronRight } from '@tabler/icons-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function Dashboard() {
     const [session, setSession] = useState(null);
@@ -46,6 +47,7 @@ export default function Dashboard() {
     const bank_select = useCombobox({
         onDropdownClose: () => bank_select.resetSelectedOption(),
     });
+    const router = useRouter()
 
     const titleData = transactions.filter((transaction) => {
         if (transaction.id == paymentFormData.values.ledger_transaction_id) {
@@ -62,9 +64,6 @@ export default function Dashboard() {
             }
             setErrors({ ...errors, ledger_loading: false })
         })
-    }, [])
-
-    useEffect(() => {
         const user_transactions = supabase.from('ledger_transactions').select().then(async (res) => {
             setTransactions(res.data)
         })
@@ -73,23 +72,23 @@ export default function Dashboard() {
         })
     }, [])
 
-    // useEffect(() => {
-
-    //     console.log("verified")
-
-    // }, [paymentFormData.values])
-
     const submitDataForm = async (dataFormValues) => {
         setErrors({ ...errors, ledger_loading: true })
         await supabase.from('ledger_accounts').insert(dataFormValues)
         const { data, error } = await supabase.from('ledger_accounts').select()
-        console.log(1, data, 2, error)
-
         if (data) {
-            await setLedger(data[0])
+            const user = await supabase.from('ledger_accounts').select().then(async (res) => {
+                if (res.data.length > 0) {
+                    const user_transactions = await supabase.from('ledger_transactions').select().then(async (res) => {
+                        setTransactions(res.data)
+                    })
+                    await setLedger(res.data[0])
+                }
+            })
+            await setErrors({ ...errors, ledger_loading: false })
+            regFormHandler.close()
         }
-        await setErrors({ ...errors, ledger_loading: false })
-        regFormHandler.close()
+
     }
 
     const submitPaymentForm = async (dataFormValues) => {
