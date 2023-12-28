@@ -104,9 +104,9 @@ export async function POST(
       //   unique_identifier: "" + body.transaction_id
       })
       const transaction = await supa.from('ledger_transactions').update({ credit_amount: Math.abs(body.amount) }).eq('id', body.transaction_id).select()
-      return Response.json(transaction)
+      return Response.json(transaction.data)
     } else {
-      return Response.json({})
+      return Response.json(routing)
     }
 
     
