@@ -88,7 +88,7 @@ export async function POST(
     const bank_numbers = await supa.from('bank_numbers').select().eq("id", bank_account.data[0].numbers)
    
     const routing = await increase.routingNumbers.list({
-      routing_number: "110000000"//bank_numbers.data[0].routing_number
+      routing_number: bank_numbers.data[0].routing_number
     }).then((res)=>{
       return res.data
     })
