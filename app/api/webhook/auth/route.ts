@@ -13,7 +13,7 @@ import { NextRequest } from 'next/server';
 export async function POST(
   request: NextRequest
 ) {
-  console.log(1)
+
   const configuration = new Configuration({
     basePath: PlaidEnvironments.sandbox,
     baseOptions: {

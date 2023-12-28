@@ -16,6 +16,7 @@ import { NextRequest } from 'next/server';
 import { cookies } from 'next/headers'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { AuthResponse } from '@supabase/supabase-js';
+import { v4 as uuidv4 } from 'uuid';
 
 const parseAccountData = (inputJson: AccountsGetResponse, access_token: string) => {
 
@@ -82,26 +83,34 @@ export async function GET(
     const accounts = await client.accountsGet(account_request)
     const push = await parseAccountData(accounts.data, accessToken)
 
-    const { data, error } = await supabase
-      .from('bank_accounts')
-      .upsert(push, {
-        ignoreDuplicates: true
-      })
-      .select()
+    const bank_nums_id = await uuidv4()
 
-    for (const item of push) {
+    for (let item of push) {
+      
+      item.numbers = bank_nums_id
+
       if (item.ready == "ready") {
         const bank_nums = await client.authGet({
           access_token: accessToken
         })
         const { data, error } = await supabase
-        .from('bank_numbers')
-        .upsert(push, {
-          ignoreDuplicates: true
-        })
-        .select()
+          .from('bank_numbers')
+          .insert({
+            "id": bank_nums_id,
+            "access_token": accessToken,
+            "account_number": bank_nums.data.numbers.ach[0].account,
+            "routing_number": bank_nums.data.numbers.ach[0].routing
+          })
       }
+
     }
+
+    const { data, error } = await supabase
+    .from('bank_accounts')
+    .upsert(push, {
+      ignoreDuplicates: true
+    })
+    .select()
 
     return Response.json(data)
 

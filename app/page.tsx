@@ -45,7 +45,7 @@ export default function Login() {
     if (error) setErrors({ ...errors, otp: true, loading: false });
     else {
       router.push('/dashboard/overview')
-      setErrors({ ...errors, loading: false });
+      // setErrors({ ...errors, loading: false });
     }
   };
 

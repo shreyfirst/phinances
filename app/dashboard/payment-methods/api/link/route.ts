@@ -35,7 +35,7 @@ export async function GET(
         // required_if_supported_products: [Products.Balance],
         country_codes: [CountryCode.Us],
         language: "en",
-        webhook: "https://webhook.site/084b7759-fdec-47f7-94fd-61da290183a6",
+        webhook: "https://webhook.site/c11fcb13-a7e0-4975-8c6b-73b02c253527",
         auth: {
           // auth_type_select_enabled: true,
           automated_microdeposits_enabled: true,

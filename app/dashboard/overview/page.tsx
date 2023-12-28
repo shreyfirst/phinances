@@ -1,10 +1,12 @@
 'use client'
 import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Input, Table, Button, Modal, Text, TextInput, Skeleton, Radio, Title, Combobox, InputBase, useCombobox, Stack, Flex } from '@mantine/core';
+import { Input, Table, Button, Modal, rem, Text, TextInput, Skeleton, Radio, Title, Combobox, InputBase, useCombobox, Stack, Flex, Stepper, NavLink } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { isEmail, isNotEmpty, useForm } from '@mantine/form';
 import { title } from 'process';
+import { IconBuildingBank, IconChevronRight } from '@tabler/icons-react';
+import Link from 'next/link';
 
 export default function Dashboard() {
     const [session, setSession] = useState(null);
@@ -30,12 +32,12 @@ export default function Dashboard() {
         initialValues: {
             ledger_transaction_id: '',
             bank_account_id: '',
-            balance_verify: false
+            // balance_verify: false
         },
         validate: {
             ledger_transaction_id: isNotEmpty(),
             bank_account_id: isNotEmpty(),
-            balance_verify: isNotEmpty()
+            // balance_verify: isNotEmpty()
         },
     });
     const [ledger, setLedger] = useState(null)
@@ -45,8 +47,8 @@ export default function Dashboard() {
         onDropdownClose: () => bank_select.resetSelectedOption(),
     });
 
-    const titleData = transactions.filter((transaction)=>{
-        if (transaction.id == paymentFormData.values.ledger_transaction_id){
+    const titleData = transactions.filter((transaction) => {
+        if (transaction.id == paymentFormData.values.ledger_transaction_id) {
             return transaction
         }
     })
@@ -71,32 +73,69 @@ export default function Dashboard() {
         })
     }, [])
 
-    useEffect(() => {
+    // useEffect(() => {
 
-        console.log("verified")
+    //     console.log("verified")
 
-    }, [paymentFormData.values.balance_verify])
+    // }, [paymentFormData.values])
 
     const submitDataForm = async (dataFormValues) => {
         setErrors({ ...errors, ledger_loading: true })
         const { data, error } = await supabase.from('ledger_accounts').insert(dataFormValues).select()
-        console.log(data, error)
+        console.log(1, data, 2, error)
 
         if (data) {
             await setLedger(data[0])
         }
         await setErrors({ ...errors, ledger_loading: false })
         regFormHandler.close()
+    }
 
+    const submitPaymentForm = async (dataFormValues) => {
+        setErrors({ ...errors, ledger_loading: true })
+        const payment = await fetch("/api/transaction", {
+            method: "POST",
+            body: JSON.stringify({
+                "amount": titleData[0].true_amount,
+                "description": titleData[0].description,
+                "bank_account_id": paymentFormData.values.bank_account_id,
+                "transaction_id": paymentFormData.values.ledger_transaction_id
+            })
+        }).then(async (res) => {
+            const a = await res.json()
+            return a.data[0]
+        })
+
+        let updatedTransactions = transactions.map(transaction => {
+            if (transaction.id === payment.id) {
+                setLedger({
+                    ...ledger,
+                    balance: ledger.balance - titleData[0].true_amount
+                })
+                return payment;
+            }
+            return transaction;
+        });
+        setTransactions(updatedTransactions);
+        // const { data, error } = await supabase.from('ledger_transactions').update({
+        //     credit_amount: Math.abs(titleData[0].debit_amount)
+        // }).match({"id": dataFormValues.ledger_transaction_id})
+
+        // if (data) {
+
+        //     await setTransactions(transactions)
+        // }
+        await setErrors({ ...errors, ledger_loading: false })
+        close()
     }
 
     return (
         <div>
             <Modal opened={modalOpen}
-                title={titleData.length > 0 ? (<Text>Pay <Text fw={700} span>${Math.abs(titleData[0].debit_amount / 100).toFixed(2)}</Text> for <Text fw={700} span>{titleData[0].description}</Text>.</Text>) : <></>}
+                title={titleData.length > 0 ? (<Text>Pay <Text fw={700} span>${Math.abs(titleData[0].true_amount / 100).toFixed(2)}</Text> for <Text fw={700} span>{titleData[0].description}</Text>.</Text>) : <></>}
                 onClose={close}>
 
-                <form onSubmit={paymentFormData.onSubmit((data) => { submitDataForm(data) })}>
+                <form onSubmit={paymentFormData.onSubmit(submitPaymentForm)}>
                     {/* <TextInput mb={12} label="Pay from" placeholder="" {...form.getInputProps('email_address')} /> */}
 
                     <Radio.Group
@@ -105,22 +144,22 @@ export default function Dashboard() {
                         name="bankAccountSelect"
                         label="Select which bank to charge"
                         withAsterisk
-                        mb={30}
-                    >
+                        mb={30}>
                         <Stack mt={8} gap={"xs"}>
-                            {bankAccounts.map((item) => (
-                                <Radio key={item.id} value={item.id} label={`${item.description} (...${item.mask})`} />
-                            ))}
+                            { bankAccounts.length > 0 ? bankAccounts.map((item) => (
+                                (<Radio key={item.id} value={item.id} disabled={item.ready != "ready"} label={`${item.description} (...${item.mask})`} />)
+                            )) : <div>
+                                <Link href='payment-methods'><Text>There are no banks connected. <Text span c="blue" fw={700}>Add one first.</Text></Text></Link>
+                                </div>}
+                            
                         </Stack>
                     </Radio.Group>
 
-                    { (paymentFormData.values.balance_verify ? (<Text>We&apos;re verifying your bank balance</Text>) : (<> </>)) }
+                    {/* { (paymentFormData.values.balance_verify ? (<Text>We&apos;re verifying your bank balance</Text>) : (<> </>)) } */}
 
-
-
-                    <Button onClick={()=>paymentFormData.setFieldValue('balance_verify', true)}
+                    <Button type='submit'
                         {...(errors.ledger_loading ? { loading: true } : {})}
-                    >Continue</Button>
+                    >Submit</Button>
                 </form>
 
             </Modal>
@@ -134,17 +173,23 @@ export default function Dashboard() {
                     <TextInput label="Last name" placeholder="" {...regFormData.getInputProps('last_name')} />
                 </div>
                 <TextInput mb={12} label="Email" type="email" placeholder="" {...regFormData.getInputProps('email_address')} />
+              
+                
                 <Button type="submit"
                     {...(errors.ledger_loading ? { loading: true } : {})}
                 >Submit</Button>
+                
+                
+
+
             </form>) : (<></>)}
 
             {ledger ? <div>
                 <Text size='lg' mb={12}>{
                     (ledger.balance >= 0 ? (ledger.balance == 0 ?
                         <Text>balance is 0</Text> :  // 0 
-                        <Text> You have balance credit of ${(Number(ledger.balance) / 100).toFixed(2)}</Text>) :  // credit
-                        <Text>You owe ${ledger.balance}</Text>) // debit
+                        <Text> You have balance credit of ${Math.abs(ledger.balance / 100).toFixed(2)} / 100).toFixed(2)}</Text>) :  // credit
+                        <Text>You owe ${Math.abs(ledger.balance / 100).toFixed(2)}</Text>) // debit
                 }</Text>
 
                 <Table>

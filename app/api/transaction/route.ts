@@ -1,12 +1,7 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
-import { NextRequest } from "next/server";
-import md5 from 'crypto-js/md5';
-
 // export async function POST(request: NextRequest) {
 
-//     const cookieStore = cookies()
-//     const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    // const cookieStore = cookies()
+    // const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
 
 //     const req_data = await request.json()
 //     const { data, error } = await supabase.from('ledger_accounts').insert(req_data).select()
@@ -40,7 +35,7 @@ import md5 from 'crypto-js/md5';
 
 // }
 
-export async function GET(request: NextRequest) {
+// export async function GET(request: NextRequest) {
 
 //     const cookieStore = cookies()
 //     const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
@@ -63,6 +58,48 @@ export async function GET(request: NextRequest) {
 //         return Response.json({}, {status: 404})
 //     }
 
-    return Response.json({})
+    // return Response.json({})
 
+// }
+
+import { NextRequest } from 'next/server';
+import Increase from 'increase';
+import { Exo_2 } from 'next/font/google';
+import { SupabaseClient } from '@supabase/supabase-js';
+
+// import { cookies } from 'next/headers'
+// import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+// import { AuthResponse } from '@supabase/supabase-js';
+
+const increase = new Increase({
+  apiKey: process.env['INCREASE_API_KEY'], // This is the default and can be omitted
+  environment: 'sandbox', // defaults to 'production'
+});
+
+export async function POST(
+  request: NextRequest
+) {
+
+    const body = await request.json()
+    const supa = new SupabaseClient("https://zfdtxahxffjgbqqslppn.supabase.co",process.env.SUPABASE_MASTER)
+    // const bank_account = await suapab
+
+    const bank_account = await supa.from('bank_accounts').select().eq("id", body.bank_account_id)
+    const bank_numbers = await supa.from('bank_numbers').select().eq("id", bank_account.data[0].numbers)
+
+    const payment = await increase.achTransfers.create({
+      // account_id: "account_1n7cmbcqo8a98f5xirzz",
+      account_id: "sandbox_account_nvt6azfnf9pdnxxwvrnn",
+      amount: body.amount,
+      statement_descriptor: body.description,
+      account_number: bank_numbers.data[0].account_number,
+      routing_number: bank_numbers.data[0].routing_number,
+    //   unique_identifier: "" + body.transaction_id
+    })
+
+    const transaction = await supa.from('ledger_transactions').update({ credit_amount: Math.abs(body.amount) }).eq('id', body.transaction_id).select()
+
+    // console.log(2,payment)
+
+    return Response.json(transaction)
 }

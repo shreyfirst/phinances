@@ -13,13 +13,35 @@
 //   Products,
 // } from "plaid";
 import { NextRequest } from 'next/server';
+import Increase from 'increase';
+
 // import { cookies } from 'next/headers'
 // import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 // import { AuthResponse } from '@supabase/supabase-js';
 
-export async function GET(
+const increase = new Increase({
+  apiKey: process.env['INCREASE_API_KEY'], // This is the default and can be omitted
+  environment: 'sandbox', // defaults to 'production'
+});
+
+export async function POST(
   request: NextRequest
 ) {
+
+    const body = await request.json()
+
+    const payment = await increase.achTransfers.create({
+      // account_id: "account_1n7cmbcqo8a98f5xirzz",
+      account_id: "sandbox_account_nvt6azfnf9pdnxxwvrnn",
+      amount: body.amount,
+      statement_descriptor: body.description
+    })
+
+    return Response.json(payment)
+}
+
+
+
 
 //   const cookieStore = cookies()
 //   const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
@@ -65,7 +87,3 @@ export async function GET(
 //     // handle error
 //     console.log(error);
 //   }
-    return Response.json({})
-
-
-}
