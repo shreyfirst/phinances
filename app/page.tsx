@@ -1,5 +1,5 @@
 'use client'
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { TextInput, Paper, Title, Text, Container, Button, PinInput, InputLabel, InputWrapper } from '@mantine/core';
 import { createClient } from '@/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -39,8 +39,21 @@ export default function Login() {
     }
   };
 
-  const verifyOtp = async (e) => {
-    e.preventDefault();
+  useEffect(()=>{
+    if (otpSent) {
+      setOtpSent(false)
+      setErrors({ ...errors, otp: false });
+      setOtp('')
+    }
+  }, [phoneNumber])
+
+  useEffect(()=>{
+    if (otp.length == 6 && !errors.otp) {
+      verifyOtp()
+    }
+  }, [otp])
+
+  const verifyOtp = async () => {
     setErrors({ ...errors, loading: true });
     const { data, error } = await supabase.auth.verifyOtp({ phone: `1${phoneNumber.replace(/\D/g, '')}`, token: otp, type: "sms" });
     if (error) setErrors({ ...errors, otp: true, loading: false });
@@ -73,6 +86,7 @@ export default function Login() {
             onChange={(e) => {
               setErrors({ ...errors, phoneNumber: false });
               setPhoneNumber(phoneFormat(e.target.value))
+          
             }}
             {...(errors.phoneNumber ? { error: 'This phone number is invalid' } : {})}
             required
@@ -104,7 +118,10 @@ export default function Login() {
               Send OTP
             </Button>
           ) : (
-            <Button fullWidth mt="sm" type='submit' onClick={verifyOtp}
+            <Button fullWidth mt="sm" type='submit' onClick={(e)=>{
+              e.preventDefault()
+              verifyOtp()
+            }}
               {...(errors.loading ? { loading: true } : {})}
             >
               Verify OTP

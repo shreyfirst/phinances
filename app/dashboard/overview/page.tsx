@@ -149,7 +149,7 @@ export default function Dashboard() {
                             { bankAccounts.length > 0 ? bankAccounts.map((item) => (
                                 (<Radio key={item.id} value={item.id} disabled={item.ready != "ready"} label={`${item.description} (...${item.mask})`} />)
                             )) : <div>
-                                <Link href='payment-methods'><Text>There are no banks connected. <Text span c="blue" fw={700}>Add one first.</Text></Text></Link>
+                                <Text>There are no banks connected. <Link href='payment-methods'><Text className='no-underline' span>Add one first.</Text></Link></Text>
                                 </div>}
                             
                         </Stack>
@@ -164,14 +164,15 @@ export default function Dashboard() {
 
             </Modal>
 
-            <Title order={3}>Manage your account</Title>
+            <Title order={3}>Pay your dues</Title>
 
             {regForm ? (<form onSubmit={regFormData.onSubmit((data) => { submitDataForm(data) })}>
                 <Text mb={12}>We&apos;re missing some of your information.</Text>
-                <div className='flex gap-4 mb-2'>
+                <Flex className='gap-4 mb-2'>
                     <TextInput label="First name" placeholder="" {...regFormData.getInputProps('first_name')} />
                     <TextInput label="Last name" placeholder="" {...regFormData.getInputProps('last_name')} />
-                </div>
+                </Flex>
+                
                 <TextInput mb={12} label="Email" type="email" placeholder="" {...regFormData.getInputProps('email_address')} />
               
                 
@@ -187,8 +188,8 @@ export default function Dashboard() {
             {ledger ? <div>
                 <Text size='lg' mb={12}>{
                     (ledger.balance >= 0 ? (ledger.balance == 0 ?
-                        <Text>balance is 0</Text> :  // 0 
-                        <Text> You have balance credit of ${Math.abs(ledger.balance / 100).toFixed(2)} / 100).toFixed(2)</Text>) :  // credit
+                        <Text>You don't owe any money</Text> :  // 0 
+                        <Text>You have balance credit of ${Math.abs(ledger.balance / 100).toFixed(2)}</Text>) :  // credit
                         <Text>You owe ${Math.abs(ledger.balance / 100).toFixed(2)}</Text>) // debit
                 }</Text>
 
@@ -198,8 +199,7 @@ export default function Dashboard() {
                             <Table.Th>Date</Table.Th>
                             <Table.Th>Description</Table.Th>
                             <Table.Th>Amount due</Table.Th>
-                            <Table.Th>Amount paid</Table.Th>
-                            <Table.Th>Status</Table.Th>
+                            <Table.Th>Due date</Table.Th>
                         </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
@@ -224,14 +224,18 @@ export default function Dashboard() {
                                                 `$${Math.abs(Number(value.credit_amount) / 100).toFixed(2)} credited`
                                         )}
                                     </Table.Td>
-                                    <Table.Td>complete</Table.Td>
+                                    <Table.Td>{new Date(value.due_date).toLocaleDateString()}</Table.Td>
 
                                     {/* <Table.Td><Input variant="unstyled"></Input></Table.Td> */}
                                 </Table.Tr>
                             )
                         })}
                     </Table.Tbody>
+                    
                 </Table>
+                {
+                        transactions.length == 0 ? <Text mt={50} fw={700} className='text-center'>You have no transactions yet</Text> : <></>
+                    }
             </div> : <></>}
             {(errors.ledger_loading && !regForm) ? (<Skeleton height={"200px"} width={"100%"} />) : <></>}
         </div>
