@@ -188,7 +188,7 @@ export default function Dashboard() {
                 <Text size='lg' mb={12}>{
                     (ledger.balance >= 0 ? (ledger.balance == 0 ?
                         <Text>balance is 0</Text> :  // 0 
-                        <Text> You have balance credit of ${Math.abs(ledger.balance / 100).toFixed(2)} / 100).toFixed(2)}</Text>) :  // credit
+                        <Text> You have balance credit of ${Math.abs(ledger.balance / 100).toFixed(2)} / 100).toFixed(2)</Text>) :  // credit
                         <Text>You owe ${Math.abs(ledger.balance / 100).toFixed(2)}</Text>) // debit
                 }</Text>
 
