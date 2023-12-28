@@ -3,11 +3,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 
-export default function SignOut({
-    children,
-}: {
-    children: React.ReactNode
-}) {
+export default function SignOut() {
     
     const supabase = createClientComponentClient()
     supabase.auth.signOut()
@@ -18,5 +14,7 @@ export default function SignOut({
             router.push('/')
         }
     }, [router])
+
+    return (<></>)
 
 }
