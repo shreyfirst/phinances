@@ -33,6 +33,7 @@ export default function RootLayout({
       </Head>
       <body className={inter.className}>
         <MantineProvider
+        defaultColorScheme="auto"
         theme={{
           scale: 1,
           fontSizes: {

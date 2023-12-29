@@ -148,7 +148,7 @@ export default function Dashboard() {
                         mb={30}>
                         <Stack mt={8} gap={"xs"}>
                             { bankAccounts.length > 0 ? bankAccounts.map((item) => (
-                                (<Radio key={item.id} value={item.id} disabled={item.ready != "ready"} label={`${item.description} (...${item.mask})`} />)
+                                (<Radio key={item.id} value={item.id} disabled={item.ready != "ready"} label={`${item.description} (${(item.ready != "ready" ? "UNVERIFIED" : "..."+item.mask)})`} />)
                             )) : <div>
                                 <Text>There are no banks connected. <Link href='payment-methods'><Text className='no-underline' span>Add one first.</Text></Link></Text>
                                 </div>}

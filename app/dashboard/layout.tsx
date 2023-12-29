@@ -23,6 +23,7 @@ export default function Demo({
 }) {
     const [opened, { toggle }] = useDisclosure();
     const [active, setActive] = useState(0);
+    const router = useRouter()
 
     const path = usePathname()
 
@@ -32,8 +33,8 @@ export default function Demo({
                     setActive(index);
                 }
             });
-        // router.prefetch('/dashboard/payment-methods')
-        // router.prefetch('/dashboard/overview')
+        router.prefetch('/dashboard/payment-methods')
+        router.prefetch('/dashboard/overview')
     }, [])
 
     const items = data.map((item, index) => (
