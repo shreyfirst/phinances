@@ -1,8 +1,14 @@
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function middleware(req) {
-  const res = NextResponse.next()
+export async function middleware(req: NextRequest) {
+  const headers = new Headers(req.headers)
+  await headers.append('x-href', req.nextUrl.href)
+  const res = NextResponse.next({
+    request: {
+       headers: headers
+    },
+ })
   const supabase = createMiddlewareClient({ req, res })
 
   const {

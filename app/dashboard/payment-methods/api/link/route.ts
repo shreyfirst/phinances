@@ -25,6 +25,8 @@ export async function GET(
     });
 
       const client = new PlaidApi(configuration);
+      const href = (process.env.ENVIRONMENT == "sandbox" ? await request.headers.get('referer') : await request.headers.get('x-href'))
+      const url = new URL(href);
 
       const link_request: LinkTokenCreateRequest = {
         user: {
@@ -35,12 +37,12 @@ export async function GET(
         // required_if_supported_products: [Products.Balance],
         country_codes: [CountryCode.Us],
         language: "en",
-        webhook: "https://webhook.site/c11fcb13-a7e0-4975-8c6b-73b02c253527",
+        webhook: url.origin + '/api/webhook/auth',
         auth: {
           // auth_type_select_enabled: true,
           automated_microdeposits_enabled: true,
-          same_day_microdeposits_enabled: true,
-          instant_microdeposits_enabled: true
+          // same_day_microdeposits_enabled: true,
+          // instant_microdeposits_enabled: true
         }
       };
       try {

@@ -10,7 +10,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter, usePathname } from 'next/navigation';
 
 const data = [
-    { label: 'Home', description: 'Pay your dues', url: '/dashboard/overview' },
+    { label: 'Dues & rent', description: 'Make a payment', url: '/dashboard/overview' },
     { label: 'Payment methods', description: 'Connect a bank', url: '/dashboard/payment-methods' },
     { label: 'Sign out', description: '', url: '/dashboard/signout' },
     // { label: 'Payment history', description: 'See past payments', url: '/dashboard/1' },

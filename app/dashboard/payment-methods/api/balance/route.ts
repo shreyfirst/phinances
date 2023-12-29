@@ -24,20 +24,21 @@ const increase = new Increase({
   environment: (process.env['ENVIRONMENT'] == 'production' ? 'production' : 'sandbox'), // defaults to 'production'
 });
 
-export async function POST(
+export async function GET(
   request: NextRequest
 ) {
+    // const body = await request.json()
 
-    const body = await request.json()
+    // const payment = await increase.achTransfers.create({
+    //   // account_id: "account_1n7cmbcqo8a98f5xirzz",
+    //   account_id: process.env["INCREASE_ARAP_ACCOUNT"],
+    //   amount: body.amount,
+    //   statement_descriptor: body.description
+    // })
 
-    const payment = await increase.achTransfers.create({
-      // account_id: "account_1n7cmbcqo8a98f5xirzz",
-      account_id: process.env["INCREASE_ARAP_ACCOUNT"],
-      amount: body.amount,
-      statement_descriptor: body.description
-    })
+    const headers = await request.headers.get('x-href')
 
-    return Response.json(payment)
+    return Response.json({"d": headers})
 }
 
 

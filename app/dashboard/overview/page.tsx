@@ -165,7 +165,7 @@ export default function Dashboard() {
 
             </Modal>
 
-            <Title order={3}>Pay your dues</Title>
+            <Title order={3}>Billing center</Title>
 
             {regForm ? (<form onSubmit={regFormData.onSubmit((data) => { submitDataForm(data) })}>
                 <Text mb={12}>We&apos;re missing some of your information.</Text>

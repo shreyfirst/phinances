@@ -11,6 +11,7 @@ import plaid, {
   PlaidEnvironments,
   PlaidError,
   Products,
+  SandboxItemSetVerificationStatusRequestVerificationStatusEnum,
 } from "plaid";
 import { NextRequest } from 'next/server';
 import { cookies } from 'next/headers'
@@ -71,7 +72,6 @@ export async function GET(
     public_token
   };
   try {
-    // console.log("in try");
     const response = await client.itemPublicTokenExchange(exchange_request);
     const accessToken = response.data.access_token;
     const itemId = response.data.item_id;
@@ -84,7 +84,6 @@ export async function GET(
     const push = await parseAccountData(accounts.data, accessToken)
 
     const bank_nums_id = await uuidv4()
-
     for (let item of push) {
       
       item.numbers = bank_nums_id
@@ -101,6 +100,18 @@ export async function GET(
             "account_number": bank_nums.data.numbers.ach[0].account,
             "routing_number": bank_nums.data.numbers.ach[0].routing
           })
+      } else {
+        const { data, error } = await supabase
+          .from('bank_numbers')
+          .insert({
+            "id": bank_nums_id,
+            "access_token": accessToken
+          })
+        const webh = client.sandboxItemSetVerificationStatus({
+          access_token: accessToken,
+          account_id: accounts.data.accounts[0].account_id,
+          verification_status: SandboxItemSetVerificationStatusRequestVerificationStatusEnum.AutomaticallyVerified
+        })
       }
 
     }
@@ -111,6 +122,7 @@ export async function GET(
       ignoreDuplicates: true
     })
     .select()
+
 
     return Response.json(data)
 
