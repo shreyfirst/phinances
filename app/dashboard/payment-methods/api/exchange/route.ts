@@ -107,11 +107,13 @@ export async function GET(
             "id": bank_nums_id,
             "access_token": accessToken
           })
-        const webh = client.sandboxItemSetVerificationStatus({
-          access_token: accessToken,
-          account_id: accounts.data.accounts[0].account_id,
-          verification_status: SandboxItemSetVerificationStatusRequestVerificationStatusEnum.AutomaticallyVerified
-        })
+        if (process.env["ENVIRONMENT"]=="sandbox") {
+          const webh = await client.sandboxItemSetVerificationStatus({
+            access_token: accessToken,
+            account_id: accounts.data.accounts[0].account_id,
+            verification_status: SandboxItemSetVerificationStatusRequestVerificationStatusEnum.AutomaticallyVerified
+          })
+        }
       }
 
     }

@@ -86,7 +86,7 @@ export async function POST(
 
     const bank_account = await supa.from('bank_accounts').select().eq("id", body.bank_account_id)
     const bank_numbers = await supa.from('bank_numbers').select().eq("id", bank_account.data[0].numbers)
-   
+    const user = (await supa.auth.admin.getUserById(bank_account.data[0].user)).data.user.user_metadata
     const routing = await increase.routingNumbers.list({
       routing_number: bank_numbers.data[0].routing_number
     }).then((res)=>{
@@ -98,10 +98,15 @@ export async function POST(
         // account_id: "account_1n7cmbcqo8a98f5xirzz",
         account_id: process.env["INCREASE_ARAP_ACCOUNT"],
         amount: body.amount,
-        statement_descriptor: body.description,
+        statement_descriptor: `DESC:(${body.description}) USER_NAME:(${user.first_name} ${user.last_name}) USER_ID:(${bank_account.data[0].user})`,
         account_number: bank_numbers.data[0].account_number,
         routing_number: bank_numbers.data[0].routing_number,
-      //   unique_identifier: "" + body.transaction_id
+        unique_identifier: body.transaction_id,
+        // individual_id: bank_account.data[0].user,
+        standard_entry_class_code: "internet_initiated",
+        company_name: "Phi Delt CAE",
+        individual_name: `${user.first_name} ${user.last_name}`,
+        require_approval: false
       })
       const transaction = await supa.from('ledger_transactions').update({ 
         credit_amount: Math.abs(body.amount),
