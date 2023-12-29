@@ -7,13 +7,12 @@ import { useEffect } from "react"
 export default function SignOut() {
     
     const supabase = createClientComponentClient()
+    supabase.auth.signOut()
     const router = useRouter()
 
     useEffect(()=>{
-        supabase.auth.signOut()
         window.location.assign(window.location.href.replace(window.location.pathname,''))
-        // router.refresh()
-    },[router])
+    },[supabase.auth])
 
     return (<div>
         <LoadingOverlay
