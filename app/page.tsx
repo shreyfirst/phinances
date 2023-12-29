@@ -69,7 +69,7 @@ export default function Login() {
         Phinances Portal
       </Title>
       <Text c="dimmed" size="sm" ta="center" mt={5}>
-        Your central hub for everything money related for <br /><b>Phi Delta Theta: California Epsilon</b>
+        Your central hub for everything money related for <Text fw={600} span>Phi Delta Theta: California Epsilon</Text>
       </Text>
 
       <Paper withBorder shadow="md" p={30} my={30} radius="md">

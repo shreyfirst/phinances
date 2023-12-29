@@ -63,7 +63,7 @@ export default function Demo({
                     <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
 
                     {/* <MantineLogo size={30} /> */}
-                    <Text>Mantine</Text>
+                    <Text>Phi Delta Theta Finances</Text>
                 </Group>
             </AppShell.Header>
             <AppShell.Navbar p="md">

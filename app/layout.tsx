@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import '@mantine/core/styles.css';
-import { MantineProvider, ColorSchemeScript } from '@mantine/core';
+import { MantineProvider, ColorSchemeScript, rem } from '@mantine/core';
 
 const inter = Inter({ subsets: ['latin'] })
 const defaultUrl = process.env.VERCEL_URL
@@ -28,9 +28,20 @@ export default function RootLayout({
       <head>
         <ColorSchemeScript />
         <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
       </head>
       <body className={inter.className}>
-        <MantineProvider>
+        <MantineProvider
+        theme={{
+          fontSizes: {
+            xs: rem(14),
+            sm: rem(16),
+            md: rem(20),
+            lg: rem(24),
+            xl: rem(28),
+          },
+        }}
+        >
           {children}
         </MantineProvider>
       </body>
