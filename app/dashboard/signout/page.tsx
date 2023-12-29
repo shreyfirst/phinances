@@ -11,7 +11,8 @@ export default function SignOut() {
 
     useEffect(()=>{
         supabase.auth.signOut()
-        router.push('/')
+        window.location.assign(window.location.href.replace(window.location.pathname,''))
+        // router.refresh()
     },[router])
 
     return (<div>

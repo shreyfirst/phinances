@@ -27,6 +27,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <ColorSchemeScript />
+        <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
       </head>
       <body className={inter.className}>
         <MantineProvider>

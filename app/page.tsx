@@ -83,6 +83,7 @@ export default function Login() {
             placeholder="(800) 273-8255"
             value={phoneNumber}
             type='tel'
+            inputMode='tel'
             onChange={(e) => {
               setErrors({ ...errors, phoneNumber: false });
               setPhoneNumber(phoneFormat(e.target.value))
@@ -108,7 +109,9 @@ export default function Login() {
                   setErrors({ ...errors, otp: false });
                   setOtp(e)
                 }}
+                type={'number'}
                 oneTimeCode={true}
+                inputMode={'numeric'}
               />
             </InputWrapper>
           )}

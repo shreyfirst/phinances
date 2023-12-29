@@ -43,7 +43,10 @@ export default function Demo({
             active={index === active}
             label={item.label}
             description={item.description}
-            onClick={() => setActive(index)}
+            onClick={() => {
+                toggle()
+                setActive(index)
+            }}
             component={Link}
             href={item.url}
         />
@@ -60,7 +63,7 @@ export default function Demo({
                     <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
 
                     {/* <MantineLogo size={30} /> */}
-                    <p>Phinances</p>
+                    <Text>Mantine</Text>
                 </Group>
             </AppShell.Header>
             <AppShell.Navbar p="md">
