@@ -74,7 +74,11 @@ export default function Dashboard() {
 
     const submitDataForm = async (dataFormValues) => {
         setErrors({ ...errors, ledger_loading: true })
-        await supabase.from('ledger_accounts').insert(dataFormValues)
+        await supabase.from('ledger_accounts').insert({
+            ...dataFormValues,
+            first_name: formatName(dataFormValues.first_name),
+            last_name: formatName(dataFormValues.last_name)
+        })
         const { data, error } = await supabase.from('ledger_accounts').select()
         if (data) {
             const user = await supabase.from('ledger_accounts').select().then(async (res) => {
@@ -90,6 +94,13 @@ export default function Dashboard() {
         }
 
     }
+
+    const formatName = (name) => {
+        return name
+            .trim() // Remove leading and trailing whitespace
+            .toLowerCase() // Convert to lowercase
+            .replace(/(?:^|\s)\S/g, (a) => a.toUpperCase()); // Capitalize first letter of each word
+    };    
 
     const submitPaymentForm = async (dataFormValues) => {
         setErrors({ ...errors, ledger_loading: true })
@@ -200,7 +211,7 @@ export default function Dashboard() {
                             <Table.Th>Date</Table.Th>
                             <Table.Th>Description</Table.Th>
                             <Table.Th>Amount due</Table.Th>
-                            <Table.Th>Due date</Table.Th>
+                            {/* <Table.Th>Due date</Table.Th> */}
                         </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
@@ -225,7 +236,7 @@ export default function Dashboard() {
                                                 `$${Math.abs(Number(value.credit_amount) / 100).toFixed(2)} credited`
                                         )}
                                     </Table.Td>
-                                    <Table.Td>{new Date(value.due_date).toLocaleDateString()}</Table.Td>
+                                    {/* <Table.Td>{new Date(value.due_date).toLocaleDateString()}</Table.Td> */}
 
                                     {/* <Table.Td><Input variant="unstyled"></Input></Table.Td> */}
                                 </Table.Tr>
