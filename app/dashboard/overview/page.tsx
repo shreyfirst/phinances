@@ -139,6 +139,7 @@ export default function Dashboard() {
                     {/* <TextInput mb={12} label="Pay from" placeholder="" {...form.getInputProps('email_address')} /> */}
 
                     <Radio.Group
+                        size='md'
                         value={paymentFormData.values.bank_account_id}
                         onChange={(bank) => { paymentFormData.setFieldValue('bank_account_id', bank) }}
                         name="bankAccountSelect"
@@ -169,11 +170,11 @@ export default function Dashboard() {
             {regForm ? (<form onSubmit={regFormData.onSubmit((data) => { submitDataForm(data) })}>
                 <Text mb={12}>We&apos;re missing some of your information.</Text>
                 <Flex className='gap-4 mb-2'>
-                    <TextInput label="First name" placeholder="" {...regFormData.getInputProps('first_name')} />
-                    <TextInput label="Last name" placeholder="" {...regFormData.getInputProps('last_name')} />
+                    <TextInput size='md' label="First name" placeholder="" {...regFormData.getInputProps('first_name')} />
+                    <TextInput size='md' label="Last name" placeholder="" {...regFormData.getInputProps('last_name')} />
                 </Flex>
                 
-                <TextInput mb={12} label="Email" type="email" placeholder="" {...regFormData.getInputProps('email_address')} />
+                <TextInput size='md' mb={12} label="Email" type="email" placeholder="" {...regFormData.getInputProps('email_address')} />
               
                 
                 <Button type="submit"

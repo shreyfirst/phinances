@@ -27,9 +27,8 @@ export default function Demo({
     const path = usePathname()
 
     useEffect(() => {
-        if (path)
             data.forEach((item, index) => {
-                if (path.includes(item.url)) {
+                if (item.url.includes(window.location.pathname)) {
                     setActive(index);
                 }
             });

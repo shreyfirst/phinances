@@ -84,6 +84,7 @@ export default function Login() {
             value={phoneNumber}
             type='tel'
             inputMode='tel'
+            size='md'
             onChange={(e) => {
               setErrors({ ...errors, phoneNumber: false });
               setPhoneNumber(phoneFormat(e.target.value))
@@ -100,8 +101,10 @@ export default function Login() {
               required
               {...(errors.otp ? { error: "This one-time passcode is invalid" } : {})}
               mt='sm'>
+                
               <PinInput
                 autoFocus
+                size='md'
                 length={6}
                 placeholder="○"
                 value={otp}
