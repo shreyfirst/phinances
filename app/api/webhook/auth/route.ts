@@ -48,8 +48,11 @@ export async function POST(
       "account_number": plaid_auth.numbers.ach[0].account,
       "routing_number": plaid_auth.numbers.ach[0].routing
     }).eq('id', bank_number.id)
+    
   }
-
+  
   return Response.json({})
+
+
 
 }

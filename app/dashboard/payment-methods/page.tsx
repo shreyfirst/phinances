@@ -18,7 +18,12 @@ export default function Dashboard() {
             setErrors({ ...errors, accounts_loading: true })
             const response = await fetch(`/dashboard/payment-methods/api/exchange?public_token=${public_token}`).then(async (res) => {
                 const json = await res.json()
-                setBankAccounts([...json, ...bankAccounts])
+                supabase
+                .from('bank_accounts')
+                .select('*').order('created_at', { ascending: false })
+                .then((res) => {
+                    setBankAccounts(res.data)
+                })
             });
             setErrors({ ...errors, accounts_loading: false, new_loading: false })
         },
@@ -35,7 +40,15 @@ export default function Dashboard() {
 
     const newBankAccount = async () => {
         setErrors({ ...errors, new_loading: true })
-        const response = await fetch(`/dashboard/payment-methods/api/link?user=${(await supabase.auth.getUser()).data.user.id}`).then((res) => {
+        const response = await fetch(`/dashboard/payment-methods/api/link`).then((res) => {
+            return res.json()
+        });
+        await setPlaidToken(response.link_token)
+    }
+
+    const updateBankAccount = async (id) => {
+        setErrors({ ...errors, new_loading: true })
+        const response = await fetch(`/dashboard/payment-methods/api/link/update?bank_account=${id}`).then((res) => {
             return res.json()
         });
         await setPlaidToken(response.link_token)
@@ -80,6 +93,7 @@ export default function Dashboard() {
                                 
                                 <Pill>{(item.ready == "ready" ? "Verified" : "Pending verification")}</Pill>
                             </Flex>
+                            {item.ready == "pending_manual_verification" ? (<Button mt={10} size='xs' loading={errors.new_loading} disabled={errors.accounts_loading} onClick={()=>{updateBankAccount(item.id)}}>Verify</Button>) : <></>}
                             {/* <Button variant="light" color="red" fullWidth mt="md" radius="md">
                                 Delete
                             </Button> */}
