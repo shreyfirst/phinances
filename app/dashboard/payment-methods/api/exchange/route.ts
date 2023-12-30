@@ -84,8 +84,6 @@ export async function GET(
     const accounts = await client.accountsGet(account_request)
     const push = await parseAccountData(accounts.data, accessToken)
 
-    console.log("accountsGet", JSON.stringify(accounts.data))
-
     for (let item of push) {
 
       if (item.ready == "ready") { // instant
@@ -102,7 +100,6 @@ export async function GET(
             "routing_number": bank_nums.data.numbers.ach[0].routing,
             "user": (await supabase.auth.getUser()).data.user.id
           }).select().then((res) => {
-            console.log(1234234, res.data,res.error)
             item.numbers = res.data[0].id
           })
 
@@ -152,7 +149,6 @@ export async function GET(
       .from('bank_accounts')
       .upsert(push)
       .select()
-      console.log(3404, data, error)
 
     return Response.json(data)
 
