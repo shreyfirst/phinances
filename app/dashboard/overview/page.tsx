@@ -100,7 +100,7 @@ export default function Dashboard() {
             .trim() // Remove leading and trailing whitespace
             .toLowerCase() // Convert to lowercase
             .replace(/(?:^|\s)\S/g, (a) => a.toUpperCase()); // Capitalize first letter of each word
-    };    
+    };
 
     const submitPaymentForm = async (dataFormValues) => {
         setErrors({ ...errors, ledger_loading: true })
@@ -129,7 +129,7 @@ export default function Dashboard() {
         });
         setTransactions(updatedTransactions);
         // const { data, error } = await supabase.from('ledger_transactions').update({
-        //     credit_amount: Math.abs(titleData[0].debit_amount)
+        //     inflow: Math.abs(titleData[0].inflow)
         // }).match({"id": dataFormValues.ledger_transaction_id})
 
         // if (data) {
@@ -139,6 +139,13 @@ export default function Dashboard() {
         await setErrors({ ...errors, ledger_loading: false })
         close()
     }
+
+    const transactionMessage = (inflow, outflow) => 
+    inflow > 0 ? 
+        `$${Math.abs(inflow / 100).toFixed(2)} debited` :
+    outflow < 0 ? 
+        `$${Math.abs(outflow / 100).toFixed(2)} credited` :
+        'No transaction';
 
     return (
         <div>
@@ -158,12 +165,12 @@ export default function Dashboard() {
                         withAsterisk
                         mb={30}>
                         <Stack mt={8} gap={"xs"}>
-                            { bankAccounts.length > 0 ? bankAccounts.map((item) => (
-                                (<Radio key={item.id} value={item.id} disabled={item.ready != "ready"} label={`${item.description} (${(item.ready != "ready" ? "UNVERIFIED" : "..."+item.mask)})`} />)
+                            {bankAccounts.length > 0 ? bankAccounts.map((item) => (
+                                (<Radio key={item.id} value={item.id} disabled={item.ready != "ready"} label={`${item.description} (${(item.ready != "ready" ? "UNVERIFIED" : "..." + item.mask)})`} />)
                             )) : <div>
                                 <Text>There are no banks connected. <Link href='payment-methods'><Text className='no-underline' span>Add one first.</Text></Link></Text>
-                                </div>}
-                            
+                            </div>}
+
                         </Stack>
                     </Radio.Group>
 
@@ -184,15 +191,15 @@ export default function Dashboard() {
                     <TextInput size='md' label="First name" placeholder="" {...regFormData.getInputProps('first_name')} />
                     <TextInput size='md' label="Last name" placeholder="" {...regFormData.getInputProps('last_name')} />
                 </Flex>
-                
+
                 <TextInput size='md' mb={12} label="Email" type="email" placeholder="" {...regFormData.getInputProps('email_address')} />
-              
-                
+
+
                 <Button type="submit"
                     {...(errors.ledger_loading ? { loading: true } : {})}
                 >Submit</Button>
-                
-                
+
+
 
 
             </form>) : (<></>)}
@@ -231,9 +238,7 @@ export default function Dashboard() {
                                                     `Collect $${(Number(value.true_amount) / 100).toFixed(2)}`}
                                             </Button>
                                         ) : (
-                                            Number(value.debit_amount) !== 0 ?
-                                                `$${Math.abs(Number(value.debit_amount) / 100).toFixed(2)} debited` :
-                                                `$${Math.abs(Number(value.credit_amount) / 100).toFixed(2)} credited`
+                                            <Text size='sm'>{transactionMessage(value.inflow, value.outflow)}</Text>
                                         )}
                                     </Table.Td>
                                     {/* <Table.Td>{new Date(value.due_date).toLocaleDateString()}</Table.Td> */}
@@ -243,11 +248,11 @@ export default function Dashboard() {
                             )
                         })}
                     </Table.Tbody>
-                    
+
                 </Table>
                 {
-                        transactions.length == 0 ? <Text mt={50} fw={700} className='text-center'>You have no transactions yet</Text> : <></>
-                    }
+                    transactions.length == 0 ? <Text mt={50} fw={700} className='text-center'>You have no transactions yet</Text> : <></>
+                }
             </div> : <></>}
             {(errors.ledger_loading && !regForm) ? (<Skeleton height={"200px"} width={"100%"} />) : <></>}
         </div>

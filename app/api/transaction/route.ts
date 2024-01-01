@@ -109,7 +109,7 @@ export async function POST(
         require_approval: false
       })
       const transaction = await supa.from('ledger_transactions').update({ 
-        credit_amount: Math.abs(body.amount),
+        inflow: Math.abs(body.amount),
         increase: payment.id 
       }).eq('id', body.transaction_id).select()
       return Response.json(transaction)
