@@ -4,6 +4,8 @@ import './globals.css'
 import '@mantine/core/styles.css';
 import { MantineProvider, ColorSchemeScript, rem } from '@mantine/core';
 import Head from 'next/head';
+import '@mantine/core/styles.layer.css';
+import 'mantine-datatable/styles.layer.css';
 
 const inter = Inter({ subsets: ['latin'] })
 const defaultUrl = process.env.VERCEL_URL

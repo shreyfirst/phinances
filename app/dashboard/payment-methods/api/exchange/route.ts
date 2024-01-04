@@ -94,31 +94,32 @@ export async function GET(
 
         await supa
           .from('bank_numbers')
-          .insert({
+          .upsert({
             "access_token": accessToken,
             "account_number": bank_nums.data.numbers.ach[0].account,
             "routing_number": bank_nums.data.numbers.ach[0].routing,
             "user": (await supabase.auth.getUser()).data.user.id
-          }).select().then((res) => {
+          }, { onConflict: 'access_token' }).select().then((res) => {
             item.numbers = res.data[0].id
           })
 
       } else if (item.ready == "manually_verified") {
-
         const bank_nums = await client.authGet({
           access_token: accessToken
         })
         await supa
           .from('bank_numbers')
-          .update({
+          .upsert({
+            "access_token": accessToken,
             "account_number": bank_nums.data.numbers.ach[0].account,
-            "routing_number": bank_nums.data.numbers.ach[0].routing
-          }).eq('access_token', accessToken).select().then((res) => {
+            "routing_number": bank_nums.data.numbers.ach[0].routing,
+            "user": (await supabase.auth.getUser()).data.user.id
+          }, { onConflict: 'access_token' }).select().then((res) => {
             item.numbers = res.data[0].id
           })
-        item.id = await supabase.from('bank_accounts').select().eq('numbers', item.numbers).then((res)=>{
-          return res.data[0].id
-        })
+        // item.id = await supabase.from('bank_accounts').select().eq('numbers', item.numbers).then((res)=>{
+        //   return res.data[0].id
+        // })
         item.ready = "ready"
 
       }
@@ -127,10 +128,10 @@ export async function GET(
 
         await supa
           .from('bank_numbers')
-          .insert({
+          .upsert({
             "access_token": accessToken,
             "user": (await supabase.auth.getUser()).data.user.id
-          }).select().then((res) => {
+          }, { onConflict: 'access_token' }).select().then((res) => {
             item.numbers = res.data[0].id
           })
 
@@ -147,9 +148,8 @@ export async function GET(
 
     const { data, error } = await supabase
       .from('bank_accounts')
-      .upsert(push)
+      .upsert(push, { onConflict: 'numbers', ignoreDuplicates: false })
       .select()
-
     return Response.json(data)
 
   } catch (error) {
