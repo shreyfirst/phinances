@@ -9,13 +9,6 @@ import { isEmail, isNotEmpty, useForm } from '@mantine/form';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter, usePathname } from 'next/navigation';
 
-const data = [
-    { label: 'Dues & rent', description: 'Make a payment', url: '/dashboard/overview' },
-    { label: 'Payment methods', description: 'Connect a bank', url: '/dashboard/payment-methods' },
-    { label: 'Sign out', description: '', url: '/dashboard/signout' },
-    // { label: 'Payment history', description: 'See past payments', url: '/dashboard/1' },
-];
-
 export default function Demo({
     children,
 }: {
@@ -24,17 +17,36 @@ export default function Demo({
     const [opened, { toggle }] = useDisclosure();
     const [active, setActive] = useState(0);
     const router = useRouter()
+    const [data, setData] = useState([
+        { label: 'Dues & rent', description: 'Make a payment', url: '/dashboard/overview' },
+        { label: 'Payment methods', description: 'Connect a bank', url: '/dashboard/payment-methods' },
+        { label: 'Sign out', description: '', url: '/dashboard/signout' },
+        // { label: 'Payment history', description: 'See past payments', url: '/dashboard/1' },
+        ])
+
+    const supabase = createClientComponentClient()
 
     const path = usePathname()
+    useEffect(() => {
+        const currentPath = path;
+        const activeIndex = data.findIndex(item => currentPath.includes(item.url));
+        if (activeIndex !== -1) {
+            setActive(activeIndex);
+        }
+    }, [path, data]);
 
     useEffect(() => {
-            data.forEach((item, index) => {
-                if (item.url.includes(window.location.pathname)) {
-                    setActive(index);
+        supabase.auth.getUser().then((res) => {
+            console.log(res.data)
+            if ("admin" in res.data.user.app_metadata) {
+                if (res.data.user.app_metadata.admin == true) {
+                    setData([
+                        { label: 'Administrate', description: 'God mode', url: '/dashboard/admin' },
+                        ...data
+                    ])
                 }
-            });
-        router.prefetch('/dashboard/payment-methods')
-        router.prefetch('/dashboard/overview')
+            }
+        })
     }, [])
 
     const items = data.map((item, index) => (
@@ -45,7 +57,6 @@ export default function Demo({
             description={item.description}
             onClick={() => {
                 toggle()
-                setActive(index)
             }}
             component={Link}
             href={item.url}
