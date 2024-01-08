@@ -1,5 +1,5 @@
 'use client';
-import { ActionIcon, Button, Checkbox, Group, Modal, Radio, Tabs } from "@mantine/core";
+import { ActionIcon, Badge, Button, Checkbox, Group, Modal, Pill, Radio, Tabs } from "@mantine/core";
 import { useDisclosure, useListState } from "@mantine/hooks";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { IconEdit, IconEye, IconTrash } from "@tabler/icons-react";
@@ -20,7 +20,7 @@ export default function Admin() {
       .then((res) => {
         setAccounts(res.data)
       })
-    supabase.rpc('as_admin', { "sql_query": "SELECT json_agg(t) FROM (select * from ledger_transactions) t" })
+    supabase.rpc('as_admin', { "sql_query": "SELECT json_agg(t) FROM (select * from ledger_transactions order by created_at desc) t" })
       .then((res) => {
         setTransactions(res.data)
       })
@@ -45,13 +45,13 @@ export default function Admin() {
 
         <Tabs.Panel pt={10} value="accounts">
           <DataTable
-            columns={[{ accessor: 'first_name' }, { accessor: 'last_name' }, { accessor: 'email_address' }, { accessor: 'balance', render: (record) => <>${Math.abs(record.balance/100).toFixed(2)}</> }]}
+            columns={[{ accessor: 'first_name' }, { accessor: 'last_name' }, { accessor: 'email_address' }, { accessor: 'balance', render: (record) => <Badge size='lg' color={record.balance < 0 ? "red" : "green"}>$ {(record.balance/100).toFixed(2)}</Badge> }]}
             records={accounts}
           />
         </Tabs.Panel>
 
         <Tabs.Panel pt={10} value="payments">
-        <Button size="xs" onClick={toggle}>New</Button>
+        <Button fullWidth my={5} size="xs" onClick={toggle}>New</Button>
           <DataTable
             noRecordsText="No records to show"
             minHeight={150}
@@ -66,7 +66,7 @@ export default function Admin() {
                   })
                   if (similar) return `${similar.first_name} ${similar.last_name}`
                 }
-              }, { accessor: 'description' }, { accessor: 'amount', render: (record) => <>${Math.abs(record.amount/100).toFixed(2)}</> }, { accessor: 'true_amount', render: (record) => <>${Math.abs(record.true_amount/100).toFixed(2)}</> }
+              }, { accessor: 'description' }, { accessor: 'amount', render: (record) => <>${Math.abs(record.amount/100).toFixed(2)}</> }, { accessor: 'true_amount', title: "Amount due" , render: (record) => <Badge size='lg' color={record.true_amount < 0 ? "red" : "green"}>$ {(record.true_amount/100).toFixed(2)}</Badge> }
             ]}
             records={transactions}
           />

@@ -64,7 +64,7 @@ export default function Dashboard() {
             }
             setErrors({ ...errors, ledger_loading: false })
         })
-        const user_transactions = supabase.from('ledger_transactions').select().then(async (res) => {
+        const user_transactions = supabase.from('ledger_transactions').select().order('created_at', { ascending: false }).then(async (res) => {
             setTransactions(res.data)
         })
         const bank_acounts = supabase.from('bank_accounts').select('*').then((res) => {
@@ -83,7 +83,7 @@ export default function Dashboard() {
         if (data) {
             const user = await supabase.from('ledger_accounts').select().then(async (res) => {
                 if (res.data.length > 0) {
-                    const user_transactions = await supabase.from('ledger_transactions').select().then(async (res) => {
+                    const user_transactions = await supabase.from('ledger_transactions').select().order('created_at', { ascending: false }).then(async (res) => {
                         setTransactions(res.data)
                     })
                     await setLedger(res.data[0])
@@ -150,7 +150,7 @@ export default function Dashboard() {
     return (
         <div>
             <Modal opened={modalOpen}
-                title={titleData.length > 0 ? (<Text>Pay <Text fw={700} span>${Math.abs(titleData[0].true_amount / 100).toFixed(2)}</Text> for <Text fw={700} span>{titleData[0].description}</Text>.</Text>) : <></>}
+                title={titleData.length > 0 ? (<Text>{(titleData[0].true_amount < 0 ? "Pay": "Collect" )} <Text fw={700} span>${Math.abs(titleData[0].true_amount / 100).toFixed(2)}</Text> for <Text fw={700} span>{titleData[0].description}</Text>.</Text>) : <></>}
                 onClose={close}>
 
                 <form onSubmit={paymentFormData.onSubmit(submitPaymentForm)}>
@@ -161,7 +161,7 @@ export default function Dashboard() {
                         value={paymentFormData.values.bank_account_id}
                         onChange={(bank) => { paymentFormData.setFieldValue('bank_account_id', bank) }}
                         name="bankAccountSelect"
-                        label="Select which bank to charge"
+                        label={`Select which bank to ${(titleData.length > 0 ? (titleData[0].true_amount < 0 ? "charge": "reimburse" ) : null)}`}
                         withAsterisk
                         mb={30}>
                         <Stack mt={8} gap={"xs"}>

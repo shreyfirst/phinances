@@ -3,7 +3,7 @@
 import { Button, Checkbox, Container, Grid, Group, Input, Modal, NumberInput, SimpleGrid, Space, Stack, Table, Text, Title } from '@mantine/core';
 import { useListState } from '@mantine/hooks';
 import { IconCurrencyDollar } from '@tabler/icons-react';
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from '@mantine/form';
 import squel from 'squel';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
@@ -29,6 +29,7 @@ interface AdminPaymentModalProps {
 }
 
 export default function AdminPaymentModal(props: AdminPaymentModalProps) {
+  const ref = useRef<HTMLDivElement>(null)
   const [values, handlers] = useListState([]);
   const [defaultAmount, setDefaultAmount] = useState(0)
   const [paymentLocked, setPaymentLocked] = useState(false)
@@ -38,6 +39,10 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
       type: 'charge',
       description: '',
       payments: []
+    },
+    validate: {
+      type: (value) => (value !== 'charge' && value !== 'reimburse') ? 'Type must be either charge or reimburse' : null,
+      description: (value) => (value.length <= 5) ? 'Description must be greater than 5 characters' : null
     }
   });
   const [loading, setLoading] = useState(false)
@@ -54,25 +59,8 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
         handlers.setItem(index, temp)
       })
     }
-    
+
   }, [props.accounts])
-
-  useEffect(() => {
-    if (paymentLocked) {
-      checked.map((value, index) => {
-        paymentForm.insertListItem('payments',
-          {
-            account_id: value.id,
-            amount: (paymentForm.values.type == "charge" ? value.checked_amount * -100 : value.checked_amount * 100),
-            description: paymentForm.values.description
-          });
-      })
-
-    } else {
-      paymentForm.setFieldValue('payments', [])
-    }
-  }, [paymentLocked])
-
 
   async function submitTransactions(data) {
 
@@ -83,20 +71,21 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
 
     setLoading(true)
 
-    await supabase.rpc('as_admin', { "sql_query": `WITH inserted AS ( ${query} RETURNING * )
+    await supabase.rpc('as_admin', {
+      "sql_query": `WITH inserted AS ( ${query} RETURNING * )
     SELECT json_agg(t) FROM (SELECT * FROM inserted) t` })
-    .then((res) => {
-      if (props.onNewTransactions) {
-        props.onNewTransactions(res.data);
-      }
-      setLoading(false)
-      props.onClose()
-    })
+      .then((res) => {
+        if (props.onNewTransactions) {
+          props.onNewTransactions(res.data);
+        }
+        setLoading(false)
+        props.onClose()
+      })
     // console.log("data", data)
   }
 
   const name = (payment) => {
-    const acct = props.accounts.find((value)=>{
+    const acct = props.accounts.find((value) => {
       return value.id == payment.account_id
     })
     return (<Text size='sm'>{acct.first_name} {acct.last_name}</Text>)
@@ -108,11 +97,37 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
     props.onClose()
   }
 
+  const validate = () => {
+    paymentForm.setFieldValue('payments', [])
+    if (checked.length <= 0) {
+      paymentForm.setFieldError('payments', "You must make at least one payment")
+    }
+    checked.map((value, index) => {
+      if (value.checked_amount <= 0) {
+        paymentForm.setFieldError('payments', "All amounts should be non-zero")
+      }
+      paymentForm.insertListItem('payments',
+        {
+          account_id: value.id,
+          amount: (paymentForm.values.type == "charge" ? value.checked_amount * -100 : value.checked_amount * 100),
+          description: paymentForm.values.description
+        });
+    })
+    paymentForm.validate()
+    if (paymentForm.isValid() == true) {
+      console.log(paymentForm.errors)
+      setPaymentLocked(true)
+    } else {
+      ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      console.log(paymentForm.errors)
+    }
+  }
+
   return (
     <>
       <Modal opened={props.opened} onClose={closeModal} closeOnClickOutside={false} title={<Text fw={700}>Create a payment</Text>}>
         {!paymentLocked ? (<>
-          <Input.Wrapper mb={15} description={"Charge → member pays, Reimburse → organization pays"} label={`What kind of payment is this?`}>
+          <Input.Wrapper ref={ref} required mb={15} description={"Charge → member pays, Reimburse → organization pays"} label={`What kind of payment is this?`} {...paymentForm.getInputProps('type')}>
 
             <SimpleGrid cols={2} mt={10} spacing="xs">
               <Button fullWidth
@@ -126,16 +141,18 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
             </SimpleGrid>
           </Input.Wrapper>
 
-          <Input.Wrapper mb={15} description="Members will see this on their online statement" label={`What is this ${(paymentForm.values.type == "charge" ? "charge" : "reimbursement")} for?`}>
-            <Input disabled={paymentLocked} placeholder={(paymentForm.values.type == "charge" ? "Saturday night poker buy-in" : "Completely legal Friday night purchases")} {...paymentForm.getInputProps("description")} />
+          <Input.Wrapper required mb={15} description="Members will see this on their online statement" label={`What is this ${(paymentForm.values.type == "charge" ? "charge" : "reimbursement")} for?`} {...paymentForm.getInputProps('description')}>
+            <Input disabled={paymentLocked} placeholder={(paymentForm.values.type == "charge" ? "Saturday night poker buy-in" : "Completely legal Friday night purchases")}  {...paymentForm.getInputProps('description')} />
           </Input.Wrapper>
 
           <Input.Wrapper
+            required
             mb={15}
             label={`Who would you like to ${(paymentForm.values.type == "charge" ? "charge" : "reimburse")}?`}
             description="Pro tip: you only need to enter the amount once">
+            <Input.Error>{(paymentForm.errors["payments"] ? paymentForm.errors["payments"] : null)}</Input.Error>
             {values.map((value, index) => {
-              return (<Group my={"xs"}>
+              return (<Group key={value.id} my={"xs"}>
                 <Checkbox
                   disabled={paymentLocked}
                   checked={value.checked}
@@ -151,6 +168,7 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
                 {
                   value.checked ? (
                     <NumberInput
+                    key={value.id}
                       disabled={paymentLocked}
                       defaultValue={defaultAmount}
                       value={value.checked_amount}
@@ -168,12 +186,12 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
               </Group>)
             })}
           </Input.Wrapper>
-          <Button fullWidth onClick={() => setPaymentLocked(!paymentLocked)}>{paymentLocked ? "Edit payment configuration" : "Review"}</Button>
+          <Button fullWidth onClick={validate}>{paymentLocked ? "Edit payment configuration" : "Review"}</Button>
 
 
         </>) : (
           <>
-            <Button fullWidth mb={15} variant='outline' onClick={() => setPaymentLocked(!paymentLocked)}>{paymentLocked ? "Edit payment configuration" : "Review"}</Button>
+            <Button fullWidth mb={15} variant='outline' onClick={()=>setPaymentLocked(false)}>{paymentLocked ? "Edit payment configuration" : "Review"}</Button>
             <Text mb={5}>You are authorizing a <Text span fw={700}>{`${(paymentForm.values.type == "charge" ? "debit" : "credit")}`}</Text> for <Text span fw={700}>{paymentForm.values.description}</Text> to the following:</Text>
 
             <Table mb={20}>
@@ -192,7 +210,7 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
             </Table>
             <form onSubmit={paymentForm.onSubmit(submitTransactions)}>
 
-              <Button type='submit' fullWidth variant='filled'>Authorize</Button>
+              <Button type='submit' fullWidth variant='filled' disabled={paymentForm.values.payments.length == 0}>Authorize</Button>
             </form>
           </>
         )}
