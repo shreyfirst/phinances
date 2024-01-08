@@ -6,6 +6,10 @@ import { IconEdit, IconEye, IconTrash } from "@tabler/icons-react";
 import { DataTable } from 'mantine-datatable';
 import { useEffect, useState } from "react";
 import AdminPaymentModal from "@/components/AdminPaymentModal"
+import dayjs from 'dayjs'
+import calendar from 'dayjs/plugin/calendar'
+import relativeTime from 'dayjs/plugin/relativeTime'
+import LocalizedFormat from 'dayjs/plugin/LocalizedFormat'
 
 export default function Admin() {
 
@@ -14,13 +18,15 @@ export default function Admin() {
   const supabase = createClientComponentClient()
   const [opened, { open, close, toggle }] = useDisclosure(false);
 
+  dayjs.extend(LocalizedFormat)
+
   useEffect(() => {
     
     supabase.rpc('as_admin', { "sql_query": "SELECT json_agg(t) FROM (select * from ledger_accounts order by first_name asc) t" })
       .then((res) => {
         setAccounts(res.data)
       })
-    supabase.rpc('as_admin', { "sql_query": "SELECT json_agg(t) FROM (select * from ledger_transactions order by created_at desc) t" })
+    supabase.rpc('as_admin', { "sql_query": "SELECT json_agg(t) FROM (select * from ledger_transactions order by due_date desc) t" })
       .then((res) => {
         setTransactions(res.data)
       })
@@ -51,7 +57,7 @@ export default function Admin() {
         </Tabs.Panel>
 
         <Tabs.Panel pt={10} value="payments">
-        <Button fullWidth my={5} size="xs" onClick={toggle}>New</Button>
+        <Button fullWidth my={5} size="sm" onClick={toggle}>New</Button>
           <DataTable
             noRecordsText="No records to show"
             minHeight={150}
@@ -66,7 +72,8 @@ export default function Admin() {
                   })
                   if (similar) return `${similar.first_name} ${similar.last_name}`
                 }
-              }, { accessor: 'description' }, { accessor: 'amount', render: (record) => <>${Math.abs(record.amount/100).toFixed(2)}</> }, { accessor: 'true_amount', title: "Amount due" , render: (record) => <Badge size='lg' color={record.true_amount < 0 ? "red" : "green"}>$ {(record.true_amount/100).toFixed(2)}</Badge> }
+              }, { accessor: 'description' }, { accessor: 'amount', render: (record) => <>${Math.abs(record.amount/100).toFixed(2)}</> }, { accessor: 'true_amount', title: "Amount due" , render: (record) => <Badge size='lg' color={record.true_amount < 0 ? "red" : "green"}>$ {(record.true_amount/100).toFixed(2)}</Badge> },
+              { accessor: 'due_date', render: (record) => dayjs(record.due_date).format("LL") }
             ]}
             records={transactions}
           />

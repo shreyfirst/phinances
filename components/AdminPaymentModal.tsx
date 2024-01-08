@@ -7,6 +7,9 @@ import { useEffect, useRef, useState } from 'react'
 import { useForm } from '@mantine/form';
 import squel from 'squel';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { DatePickerInput } from '@mantine/dates';
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
 
 type LedgerAccount = {
   id: string
@@ -38,13 +41,15 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
     initialValues: {
       type: 'charge',
       description: '',
-      payments: []
+      payments: [],
+      due_date: dayjs().add(1, 'day')
     },
     validate: {
       type: (value) => (value !== 'charge' && value !== 'reimburse') ? 'Type must be either charge or reimburse' : null,
       description: (value) => (value.length <= 5) ? 'Description must be greater than 5 characters' : null
     }
   });
+  dayjs.extend(utc)
   const [loading, setLoading] = useState(false)
 
   const supabase = createClientComponentClient()
@@ -79,7 +84,7 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
           props.onNewTransactions(res.data);
         }
         setLoading(false)
-        props.onClose()
+        closeModal()
       })
     // console.log("data", data)
   }
@@ -110,7 +115,8 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
         {
           account_id: value.id,
           amount: (paymentForm.values.type == "charge" ? value.checked_amount * -100 : value.checked_amount * 100),
-          description: paymentForm.values.description
+          description: paymentForm.values.description,
+          due_date: dayjs(paymentForm.values.due_date).utc().format('YYYY-MM-DD HH:mm:ssZ')
         });
     })
     paymentForm.validate()
@@ -145,6 +151,18 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
             <Input disabled={paymentLocked} placeholder={(paymentForm.values.type == "charge" ? "Saturday night poker buy-in" : "Completely legal Friday night purchases")}  {...paymentForm.getInputProps('description')} />
           </Input.Wrapper>
 
+          {(paymentForm.values.type == "charge" ? <DatePickerInput
+            label="When is the payment due?"
+            // placeholder="Pick date"
+            mb={15}
+            required
+            firstDayOfWeek={0}
+            minDate={new Date()}
+            valueFormat='ddd, MMM D, YYYY'
+            description="Members will be reminded every day after this date to pay"
+            {...paymentForm.getInputProps('due_date')}
+          /> : null)} 
+
           <Input.Wrapper
             required
             mb={15}
@@ -168,7 +186,7 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
                 {
                   value.checked ? (
                     <NumberInput
-                    key={value.id}
+                      key={value.id}
                       disabled={paymentLocked}
                       defaultValue={defaultAmount}
                       value={value.checked_amount}
@@ -191,7 +209,7 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
 
         </>) : (
           <>
-            <Button fullWidth mb={15} variant='outline' onClick={()=>setPaymentLocked(false)}>{paymentLocked ? "Edit payment configuration" : "Review"}</Button>
+            <Button fullWidth mb={15} variant='outline' onClick={() => setPaymentLocked(false)}>{paymentLocked ? "Edit payment configuration" : "Review"}</Button>
             <Text mb={5}>You are authorizing a <Text span fw={700}>{`${(paymentForm.values.type == "charge" ? "debit" : "credit")}`}</Text> for <Text span fw={700}>{paymentForm.values.description}</Text> to the following:</Text>
 
             <Table mb={20}>

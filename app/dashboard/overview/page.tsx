@@ -1,13 +1,17 @@
 'use client'
 import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Input, Table, Button, Modal, rem, Text, TextInput, Skeleton, Radio, Title, Combobox, InputBase, useCombobox, Stack, Flex, Stepper, NavLink } from '@mantine/core';
+import { Table, Button, Modal, rem, Text, TextInput, Skeleton, Radio, Title, Combobox, InputBase, useCombobox, Stack, Flex, Stepper, NavLink } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { isEmail, isNotEmpty, useForm } from '@mantine/form';
-import { title } from 'process';
-import { IconBuildingBank, IconChevronRight } from '@tabler/icons-react';
+
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import dayjs from 'dayjs'
+import calendar from 'dayjs/plugin/calendar'
+import relativeTime from 'dayjs/plugin/relativeTime'
+import LocalizedFormat from 'dayjs/plugin/LocalizedFormat'
+
 
 export default function Dashboard() {
     const [session, setSession] = useState(null);
@@ -48,6 +52,9 @@ export default function Dashboard() {
         onDropdownClose: () => bank_select.resetSelectedOption(),
     });
     const router = useRouter()
+    dayjs.extend(calendar)
+    dayjs.extend(relativeTime)
+    dayjs.extend(LocalizedFormat)
 
     const titleData = transactions.filter((transaction) => {
         if (transaction.id == paymentFormData.values.ledger_transaction_id) {
@@ -140,17 +147,17 @@ export default function Dashboard() {
         close()
     }
 
-    const transactionMessage = (inflow, outflow) => 
-    inflow > 0 ? 
-        `$${Math.abs(inflow / 100).toFixed(2)} debited` :
-    outflow < 0 ? 
-        `$${Math.abs(outflow / 100).toFixed(2)} credited` :
-        'No transaction';
+    const transactionMessage = (inflow, outflow) =>
+        inflow > 0 ?
+            `$${Math.abs(inflow / 100).toFixed(2)} debited` :
+            outflow < 0 ?
+                `$${Math.abs(outflow / 100).toFixed(2)} credited` :
+                'No transaction';
 
     return (
         <div>
             <Modal opened={modalOpen}
-                title={titleData.length > 0 ? (<Text>{(titleData[0].true_amount < 0 ? "Pay": "Collect" )} <Text fw={700} span>${Math.abs(titleData[0].true_amount / 100).toFixed(2)}</Text> for <Text fw={700} span>{titleData[0].description}</Text>.</Text>) : <></>}
+                title={titleData.length > 0 ? (<Text>{(titleData[0].true_amount < 0 ? "Pay" : "Collect")} <Text fw={700} span>${Math.abs(titleData[0].true_amount / 100).toFixed(2)}</Text> for <Text fw={700} span>{titleData[0].description}</Text>.</Text>) : <></>}
                 onClose={close}>
 
                 <form onSubmit={paymentFormData.onSubmit(submitPaymentForm)}>
@@ -161,7 +168,7 @@ export default function Dashboard() {
                         value={paymentFormData.values.bank_account_id}
                         onChange={(bank) => { paymentFormData.setFieldValue('bank_account_id', bank) }}
                         name="bankAccountSelect"
-                        label={`Select which bank to ${(titleData.length > 0 ? (titleData[0].true_amount < 0 ? "charge": "reimburse" ) : null)}`}
+                        label={`Select which bank to ${(titleData.length > 0 ? (titleData[0].true_amount < 0 ? "charge" : "reimburse") : null)}`}
                         withAsterisk
                         mb={30}>
                         <Stack mt={8} gap={"xs"}>
@@ -218,7 +225,7 @@ export default function Dashboard() {
                             <Table.Th>Date</Table.Th>
                             <Table.Th>Description</Table.Th>
                             <Table.Th>Amount due</Table.Th>
-                            {/* <Table.Th>Due date</Table.Th> */}
+                            <Table.Th>Due date</Table.Th>
                         </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
@@ -241,7 +248,7 @@ export default function Dashboard() {
                                             <Text size='sm'>{transactionMessage(value.inflow, value.outflow)}</Text>
                                         )}
                                     </Table.Td>
-                                    {/* <Table.Td>{new Date(value.due_date).toLocaleDateString()}</Table.Td> */}
+                                    <Table.Td> <Text size="sm">{dayjs(value.due_date).format("LL")}</Text></Table.Td>
 
                                     {/* <Table.Td><Input variant="unstyled"></Input></Table.Td> */}
                                 </Table.Tr>
