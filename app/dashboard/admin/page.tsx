@@ -6,10 +6,6 @@ import { IconEdit, IconEye, IconTrash } from "@tabler/icons-react";
 import { DataTable } from 'mantine-datatable';
 import { useEffect, useState } from "react";
 import AdminPaymentModal from "@/components/AdminPaymentModal"
-import dayjs from 'dayjs'
-import calendar from 'dayjs/plugin/calendar'
-import relativeTime from 'dayjs/plugin/relativeTime'
-import LocalizedFormat from 'dayjs/plugin/LocalizedFormat'
 
 export default function Admin() {
 
@@ -17,8 +13,6 @@ export default function Admin() {
   const [transactions, setTransactions] = useState([])
   const supabase = createClientComponentClient()
   const [opened, { open, close, toggle }] = useDisclosure(false);
-
-  dayjs.extend(LocalizedFormat)
 
   useEffect(() => {
     
@@ -73,7 +67,7 @@ export default function Admin() {
                   if (similar) return `${similar.first_name} ${similar.last_name}`
                 }
               }, { accessor: 'description' }, { accessor: 'amount', render: (record) => <>${Math.abs(record.amount/100).toFixed(2)}</> }, { accessor: 'true_amount', title: "Amount due" , render: (record) => <Badge size='lg' color={record.true_amount < 0 ? "red" : "green"}>$ {(record.true_amount/100).toFixed(2)}</Badge> },
-              { accessor: 'due_date', render: (record) => dayjs(record.due_date).format("LL") }
+              { accessor: 'due_date', render: (record) => new Date(record.due_date).toDateString() }
             ]}
             records={transactions}
           />

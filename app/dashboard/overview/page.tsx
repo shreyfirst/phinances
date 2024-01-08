@@ -7,11 +7,6 @@ import { isEmail, isNotEmpty, useForm } from '@mantine/form';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import dayjs from 'dayjs'
-import calendar from 'dayjs/plugin/calendar'
-import relativeTime from 'dayjs/plugin/relativeTime'
-import LocalizedFormat from 'dayjs/plugin/LocalizedFormat'
-
 
 export default function Dashboard() {
     const [session, setSession] = useState(null);
@@ -52,10 +47,7 @@ export default function Dashboard() {
         onDropdownClose: () => bank_select.resetSelectedOption(),
     });
     const router = useRouter()
-    dayjs.extend(calendar)
-    dayjs.extend(relativeTime)
-    dayjs.extend(LocalizedFormat)
-
+    
     const titleData = transactions.filter((transaction) => {
         if (transaction.id == paymentFormData.values.ledger_transaction_id) {
             return transaction
@@ -248,7 +240,7 @@ export default function Dashboard() {
                                             <Text size='sm'>{transactionMessage(value.inflow, value.outflow)}</Text>
                                         )}
                                     </Table.Td>
-                                    <Table.Td> <Text size="sm">{dayjs(value.due_date).format("LL")}</Text></Table.Td>
+                                    <Table.Td> <Text size="sm">{new Date(value.due_date).toDateString()}</Text></Table.Td>
 
                                     {/* <Table.Td><Input variant="unstyled"></Input></Table.Td> */}
                                 </Table.Tr>
