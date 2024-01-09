@@ -1,12 +1,13 @@
 'use client'
 import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Table, Button, Modal, rem, Text, TextInput, Skeleton, Radio, Title, Combobox, InputBase, useCombobox, Stack, Flex, Stepper, NavLink } from '@mantine/core';
+import { Table, Button, Modal, Accordion, Text, TextInput, Skeleton, Radio, Title, Container, InputBase, useCombobox, Stack, Flex, Stepper, NavLink, ScrollArea } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { isEmail, isNotEmpty, useForm } from '@mantine/form';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import dayjs from 'dayjs'
 
 export default function Dashboard() {
     const [session, setSession] = useState(null);
@@ -41,14 +42,18 @@ export default function Dashboard() {
         },
     });
     const [ledger, setLedger] = useState(null)
-    const [transactions, setTransactions] = useState([])
+
+    const [currentTransactions, setCurrentTransactions] = useState([])
+    const [laterTransactions, setLaterTransactions] = useState([])
+    const [oldTransactions, setOldTransactions] = useState([])
+
     const [bankAccounts, setBankAccounts] = useState([])
     const bank_select = useCombobox({
         onDropdownClose: () => bank_select.resetSelectedOption(),
     });
     const router = useRouter()
-    
-    const titleData = transactions.filter((transaction) => {
+
+    const titleData = currentTransactions.filter((transaction) => {
         if (transaction.id == paymentFormData.values.ledger_transaction_id) {
             return transaction
         }
@@ -63,9 +68,17 @@ export default function Dashboard() {
             }
             setErrors({ ...errors, ledger_loading: false })
         })
-        const user_transactions = supabase.from('ledger_transactions').select().order('created_at', { ascending: false }).then(async (res) => {
-            setTransactions(res.data)
+
+        supabase.from('ledger_transactions').select().filter('due_date', 'lt', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
+            setCurrentTransactions(res.data)
         })
+        supabase.from('ledger_transactions').select().filter('due_date', 'gte', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
+            setLaterTransactions(res.data)
+        })
+        supabase.from('ledger_transactions').select().eq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
+            setOldTransactions(res.data)
+        })
+
         const bank_acounts = supabase.from('bank_accounts').select('*').then((res) => {
             setBankAccounts(res.data)
         })
@@ -82,8 +95,14 @@ export default function Dashboard() {
         if (data) {
             const user = await supabase.from('ledger_accounts').select().then(async (res) => {
                 if (res.data.length > 0) {
-                    const user_transactions = await supabase.from('ledger_transactions').select().order('created_at', { ascending: false }).then(async (res) => {
-                        setTransactions(res.data)
+                    supabase.from('ledger_transactions').select().filter('due_date', 'lt', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
+                        setCurrentTransactions(res.data)
+                    })
+                    supabase.from('ledger_transactions').select().filter('due_date', 'gte', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
+                        setLaterTransactions(res.data)
+                    })
+                    supabase.from('ledger_transactions').select().eq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
+                        setOldTransactions(res.data)
                     })
                     await setLedger(res.data[0])
                 }
@@ -96,9 +115,9 @@ export default function Dashboard() {
 
     const formatName = (name) => {
         return name
-            .trim() // Remove leading and trailing whitespace
-            .toLowerCase() // Convert to lowercase
-            .replace(/(?:^|\s)\S/g, (a) => a.toUpperCase()); // Capitalize first letter of each word
+            .trim()
+            .toLowerCase()
+            .replace(/(?:^|\s)\S/g, (a) => a.toUpperCase())
     };
 
     const submitPaymentForm = async (dataFormValues) => {
@@ -116,7 +135,7 @@ export default function Dashboard() {
             return a.data[0]
         })
 
-        let updatedTransactions = transactions.map(transaction => {
+        let updatedTransactions = currentTransactions.map(transaction => {
             if (transaction.id === payment.id) {
                 setLedger({
                     ...ledger,
@@ -126,15 +145,8 @@ export default function Dashboard() {
             }
             return transaction;
         });
-        setTransactions(updatedTransactions);
-        // const { data, error } = await supabase.from('ledger_transactions').update({
-        //     inflow: Math.abs(titleData[0].inflow)
-        // }).match({"id": dataFormValues.ledger_transaction_id})
+        setCurrentTransactions(updatedTransactions);
 
-        // if (data) {
-
-        //     await setTransactions(transactions)
-        // }
         await setErrors({ ...errors, ledger_loading: false })
         close()
     }
@@ -210,48 +222,183 @@ export default function Dashboard() {
                         <Text>You have balance credit of ${Math.abs(ledger.balance / 100).toFixed(2)}</Text>) :  // credit
                         <Text>You owe ${Math.abs(ledger.balance / 100).toFixed(2)}</Text>) // debit
                 }</Text>
+                <Accordion variant="filled" defaultValue="current">
 
-                <Table>
-                    <Table.Thead>
-                        <Table.Tr>
-                            <Table.Th>Date</Table.Th>
-                            <Table.Th>Description</Table.Th>
-                            <Table.Th>Amount due</Table.Th>
-                            <Table.Th>Due date</Table.Th>
-                        </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
-                        {transactions.map((value) => {
-                            return (
-                                <Table.Tr key={value.id}>
-                                    <Table.Td>{new Date(value.created_at).toDateString()}</Table.Td>
-                                    <Table.Td>{value.description}</Table.Td>
-                                    <Table.Td>
-                                        {value.true_amount !== 0 ? (
-                                            <Button size='compact-sm' onClick={() => {
-                                                paymentFormData.setFieldValue('ledger_transaction_id', value.id);
-                                                open();
-                                            }}>
-                                                {value.true_amount < 0 ?
-                                                    `Pay $${Math.abs(Number(value.true_amount) / 100).toFixed(2)}` :
-                                                    `Collect $${(Number(value.true_amount) / 100).toFixed(2)}`}
-                                            </Button>
-                                        ) : (
-                                            <Text size='sm'>{transactionMessage(value.inflow, value.outflow)}</Text>
-                                        )}
-                                    </Table.Td>
-                                    <Table.Td> <Text size="sm">{new Date(value.due_date).toDateString()}</Text></Table.Td>
+                    <Accordion.Item key={"current"} value={"current"}>
+                        <Accordion.Control>Due this week</Accordion.Control>
 
-                                    {/* <Table.Td><Input variant="unstyled"></Input></Table.Td> */}
-                                </Table.Tr>
-                            )
-                        })}
-                    </Table.Tbody>
 
-                </Table>
-                {
+                        <Accordion.Panel className='overflow-x-auto'>
+
+                            <ScrollArea className='min-w-96'>
+
+                                <Table>
+                                    <Table.Thead>
+                                        <Table.Tr>
+                                            <Table.Th>Due date</Table.Th>
+                                            {/* <Table.Th>Date</Table.Th> */}
+                                            <Table.Th>Description</Table.Th>
+                                            <Table.Th>Amount due</Table.Th>
+                                        </Table.Tr>
+                                    </Table.Thead>
+                                    <Table.Tbody>
+                                        {currentTransactions.map((value) => {
+                                            return (
+                                                <Table.Tr key={value.id}>
+                                                    <Table.Td> <Text size="sm">{new Date(value.due_date).toDateString()}</Text></Table.Td>
+                                                    {/* <Table.Td>{new Date(value.created_at).toDateString()}</Table.Td> */}
+                                                    <Table.Td>{value.description}</Table.Td>
+                                                    <Table.Td>
+                                                        {value.true_amount !== 0 ? (
+                                                            <Button size='compact-sm' onClick={() => {
+                                                                paymentFormData.setFieldValue('ledger_transaction_id', value.id);
+                                                                open();
+                                                            }}>
+                                                                {value.true_amount < 0 ?
+                                                                    `Pay $${Math.abs(Number(value.true_amount) / 100).toFixed(2)}` :
+                                                                    `Collect $${(Number(value.true_amount) / 100).toFixed(2)}`}
+                                                            </Button>
+                                                        ) : (
+                                                            <Text size='sm'>{transactionMessage(value.inflow, value.outflow)}</Text>
+                                                        )}
+                                                    </Table.Td>
+
+                                                    {/* <Table.Td><Input variant="unstyled"></Input></Table.Td> */}
+                                                </Table.Tr>
+                                            )
+                                        })}
+                                    </Table.Tbody>
+
+                                </Table>
+
+                            </ScrollArea>
+                            {
+                                currentTransactions.length == 0 ? <Text my={50} className='text-center'>Nothing due this week. Lucky you!</Text> : <></>
+                            }
+
+                        </Accordion.Panel>
+
+                    </Accordion.Item>
+
+                    {
+                        laterTransactions.length !== 0 ? <Accordion.Item key={"later"} value={"later"}>
+                            <Accordion.Control>Due later</Accordion.Control>
+
+
+                            <Accordion.Panel className='overflow-x-auto'>
+
+                                <ScrollArea className='min-w-96'>
+
+                                    <Table>
+                                        <Table.Thead>
+                                            <Table.Tr>
+                                                <Table.Th>Due date</Table.Th>
+                                                {/* <Table.Th>Date</Table.Th> */}
+                                                <Table.Th>Description</Table.Th>
+                                                <Table.Th>Amount due</Table.Th>
+                                            </Table.Tr>
+                                        </Table.Thead>
+                                        <Table.Tbody>
+                                            {laterTransactions.map((value) => {
+                                                return (
+                                                    <Table.Tr key={value.id}>
+                                                        <Table.Td> <Text size="sm">{new Date(value.due_date).toDateString()}</Text></Table.Td>
+
+                                                        {/* <Table.Td>{new Date(value.created_at).toDateString()}</Table.Td> */}
+                                                        <Table.Td>{value.description}</Table.Td>
+                                                        <Table.Td>
+                                                            {value.true_amount !== 0 ? (
+                                                                <Button size='compact-sm' onClick={() => {
+                                                                    paymentFormData.setFieldValue('ledger_transaction_id', value.id);
+                                                                    open();
+                                                                }}>
+                                                                    {value.true_amount < 0 ?
+                                                                        `Pay $${Math.abs(Number(value.true_amount) / 100).toFixed(2)}` :
+                                                                        `Collect $${(Number(value.true_amount) / 100).toFixed(2)}`}
+                                                                </Button>
+                                                            ) : (
+                                                                <Text size='sm'>{transactionMessage(value.inflow, value.outflow)}</Text>
+                                                            )}
+                                                        </Table.Td>
+
+                                                        {/* <Table.Td><Input variant="unstyled"></Input></Table.Td> */}
+                                                    </Table.Tr>
+                                                )
+                                            })}
+                                        </Table.Tbody>
+
+                                    </Table>
+                                </ScrollArea>
+
+
+                            </Accordion.Panel>
+
+                        </Accordion.Item> : <></>
+                    }
+
+
+
+                    <Accordion.Item key={"old"} value={"old"}>
+                        <Accordion.Control>Past payments</Accordion.Control>
+
+
+                        <Accordion.Panel className='overflow-x-auto'>
+
+                            <ScrollArea className='min-w-96'>
+
+                                <Table>
+                                    <Table.Thead>
+                                        <Table.Tr>
+                                            <Table.Th>Due date</Table.Th>
+                                            {/* <Table.Th>Date</Table.Th> */}
+                                            <Table.Th>Description</Table.Th>
+                                            <Table.Th>Amount due</Table.Th>
+                                        </Table.Tr>
+                                    </Table.Thead>
+                                    <Table.Tbody>
+                                        {oldTransactions.map((value) => {
+                                            return (
+                                                <Table.Tr key={value.id}>
+                                                    <Table.Td> <Text size="sm">{new Date(value.due_date).toDateString()}</Text></Table.Td>
+
+                                                    {/* <Table.Td>{new Date(value.created_at).toDateString()}</Table.Td> */}
+                                                    <Table.Td>{value.description}</Table.Td>
+                                                    <Table.Td>
+                                                        {value.true_amount !== 0 ? (
+                                                            <Button size='compact-sm' onClick={() => {
+                                                                paymentFormData.setFieldValue('ledger_transaction_id', value.id);
+                                                                open();
+                                                            }}>
+                                                                {value.true_amount < 0 ?
+                                                                    `Pay $${Math.abs(Number(value.true_amount) / 100).toFixed(2)}` :
+                                                                    `Collect $${(Number(value.true_amount) / 100).toFixed(2)}`}
+                                                            </Button>
+                                                        ) : (
+                                                            <Text size='sm'>{transactionMessage(value.inflow, value.outflow)}</Text>
+                                                        )}
+                                                    </Table.Td>
+
+                                                    {/* <Table.Td><Input variant="unstyled"></Input></Table.Td> */}
+                                                </Table.Tr>
+                                            )
+                                        })}
+                                    </Table.Tbody>
+
+                                </Table>
+                            </ScrollArea>
+                            {
+                                laterTransactions.length == 0 ? <Text my={50} className='text-center'>Nothing due later</Text> : <></>
+                            }
+
+                        </Accordion.Panel>
+
+                    </Accordion.Item>
+
+                </Accordion>
+
+                {/* {
                     transactions.length == 0 ? <Text mt={50} fw={700} className='text-center'>You have no transactions yet</Text> : <></>
-                }
+                } */}
             </div> : <></>}
             {(errors.ledger_loading && !regForm) ? (<Skeleton height={"200px"} width={"100%"} />) : <></>}
         </div>
