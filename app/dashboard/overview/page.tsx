@@ -238,7 +238,7 @@ export default function Dashboard() {
                                             <Table.Th>Due date</Table.Th>
                                             {/* <Table.Th>Date</Table.Th> */}
                                             <Table.Th>Description</Table.Th>
-                                            <Table.Th>Amount due</Table.Th>
+                                            <Table.Th>Amount</Table.Th>
                                         </Table.Tr>
                                     </Table.Thead>
                                     <Table.Tbody>
@@ -295,7 +295,7 @@ export default function Dashboard() {
                                                 <Table.Th>Due date</Table.Th>
                                                 {/* <Table.Th>Date</Table.Th> */}
                                                 <Table.Th>Description</Table.Th>
-                                                <Table.Th>Amount due</Table.Th>
+                                                <Table.Th>Amount</Table.Th>
                                             </Table.Tr>
                                         </Table.Thead>
                                         <Table.Tbody>
@@ -352,7 +352,7 @@ export default function Dashboard() {
                                             <Table.Th>Due date</Table.Th>
                                             {/* <Table.Th>Date</Table.Th> */}
                                             <Table.Th>Description</Table.Th>
-                                            <Table.Th>Amount due</Table.Th>
+                                            <Table.Th>Amount paid</Table.Th>
                                         </Table.Tr>
                                     </Table.Thead>
                                     <Table.Tbody>
@@ -387,7 +387,7 @@ export default function Dashboard() {
                                 </Table>
                             </ScrollArea>
                             {
-                                laterTransactions.length == 0 ? <Text my={50} className='text-center'>Nothing due later</Text> : <></>
+                                oldTransactions.length == 0 ? <Text my={50} className='text-center'>Nothing due later</Text> : <></>
                             }
 
                         </Accordion.Panel>
