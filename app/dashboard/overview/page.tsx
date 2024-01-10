@@ -59,22 +59,16 @@ export default function Dashboard() {
         if (paymentFormData.values.ledger_transaction_id.length > 0) {
             let title;
 
-            const ct = currentTransactions.map((transaction) => {
+            const ct = currentTransactions.find((transaction) => {
                 if (transaction.id == paymentFormData.values.ledger_transaction_id) {
                     title = transaction
-                    return transaction
+                    return true
                 }
             })
-            const ot = oldTransactions.filter((transaction) => {
+            const lt = laterTransactions.find((transaction) => {
                 if (transaction.id == paymentFormData.values.ledger_transaction_id) {
                     title = transaction
-                    return transaction
-                }
-            })
-            const lt = laterTransactions.filter((transaction) => {
-                if (transaction.id == paymentFormData.values.ledger_transaction_id) {
-                    title = transaction
-                    return transaction
+                    return true
                 }
             })
     
