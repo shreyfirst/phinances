@@ -52,12 +52,36 @@ export default function Dashboard() {
         onDropdownClose: () => bank_select.resetSelectedOption(),
     });
     const router = useRouter()
+    const [titleData, setTitleData] = useState([])
 
-    const titleData = currentTransactions.filter((transaction) => {
-        if (transaction.id == paymentFormData.values.ledger_transaction_id) {
-            return transaction
+    useEffect(() => {
+
+        if (paymentFormData.values.ledger_transaction_id.length > 0) {
+            let title;
+
+            const ct = currentTransactions.map((transaction) => {
+                if (transaction.id == paymentFormData.values.ledger_transaction_id) {
+                    title = transaction
+                    return transaction
+                }
+            })
+            const ot = oldTransactions.filter((transaction) => {
+                if (transaction.id == paymentFormData.values.ledger_transaction_id) {
+                    title = transaction
+                    return transaction
+                }
+            })
+            const lt = laterTransactions.filter((transaction) => {
+                if (transaction.id == paymentFormData.values.ledger_transaction_id) {
+                    title = transaction
+                    return transaction
+                }
+            })
+    
+            setTitleData([title])
         }
-    })
+
+    }, [paymentFormData.values.ledger_transaction_id])
 
     useEffect(() => {
         const user = supabase.from('ledger_accounts').select().then(async (res) => {
@@ -387,7 +411,7 @@ export default function Dashboard() {
                                 </Table>
                             </ScrollArea>
                             {
-                                oldTransactions.length == 0 ? <Text my={50} className='text-center'>Nothing due later</Text> : <></>
+                                oldTransactions.length == 0 ? <Text my={50} className='text-center'>No past payments</Text> : <></>
                             }
 
                         </Accordion.Panel>
