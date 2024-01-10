@@ -360,7 +360,7 @@ export default function Admin() {
                       $ {(value.amount / 100).toFixed(2)}
                     </Table.Td>
                     <Table.Td>
-                    {findBudget(value.out_budget_id)}
+                    {findBudget(value.in_budget_id)}
                     </Table.Td>
 
                     {/* <Table.Td><Input variant="unstyled"></Input></Table.Td> */}
