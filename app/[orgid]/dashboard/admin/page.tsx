@@ -7,7 +7,7 @@ import { DataTable } from 'mantine-datatable';
 import { useEffect, useState } from "react";
 import AdminPaymentModal from "@/components/AdminPaymentModal"
 
-export default function Admin() {
+export default function Admin({ params }: { params: { orgid: string } }) {
 
   const [accounts, setAccounts] = useState([])
   const [transactions, setTransactions] = useState([])
@@ -15,6 +15,8 @@ export default function Admin() {
   const [opened, { open, close, toggle }] = useDisclosure(false);
 
   useEffect(() => {
+
+    console.log(params.orgid)
     
     supabase.rpc('as_admin', { "sql_query": "SELECT json_agg(t) FROM (select * from ledger_accounts order by first_name asc) t" })
       .then((res) => {
@@ -32,7 +34,7 @@ export default function Admin() {
 
   return (
     <>
-      <AdminPaymentModal accounts={accounts} opened={opened} onClose={close} onNewTransactions={handleNewTransactions} title="" centered/>
+      <AdminPaymentModal org_id={`${params.orgid}`} accounts={accounts} opened={opened} onClose={close} onNewTransactions={handleNewTransactions} title="" centered/>
       <Tabs variant='outline' defaultValue="accounts">
         <Tabs.List>
           <Tabs.Tab value="accounts" >

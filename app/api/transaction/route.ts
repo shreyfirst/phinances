@@ -82,17 +82,16 @@ export async function POST(
 
   const body = await request.json()
   const supa = new SupabaseClient("https://zfdtxahxffjgbqqslppn.supabase.co", process.env.SUPABASE_MASTER)
-  // const bank_account = await suapab
 
-  const bank_account = await supa.from('bank_accounts').select().eq("id", body.bank_account_id)
-  const bank_numbers = await supa.from('bank_numbers').select().eq("id", bank_account.data[0].numbers)
-  const og_transaction = await supa.from('ledger_transactions').select().eq("id", body.transaction_id)
-  const user = (await supa.auth.admin.getUserById(bank_account.data[0].user)).data.user.user_metadata
-  const routing = await increase.routingNumbers.list({
-    routing_number: bank_numbers.data[0].routing_number
-  }).then((res) => {
-    return res.data
-  })
+  const [bank_account, og_transaction] = await Promise.all([
+    supa.from('bank_accounts').select().eq("id", body.bank_account_id),
+    supa.from('ledger_transactions').select().eq("id", body.transaction_id)
+  ]);
+  const [bank_numbers, user] = await Promise.all([
+    supa.from('bank_numbers').select().eq("id", bank_account.data[0].numbers),
+    supa.auth.admin.getUserById(bank_account.data[0].user).then((res) => res.data.user.user_metadata)
+  ])
+  const routing = await increase.routingNumbers.list({ routing_number: bank_numbers.data[0].routing_number }).then((res) => res.data)
 
   if (og_transaction.data[0].approved == true) {
 

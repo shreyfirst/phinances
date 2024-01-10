@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dayjs from 'dayjs'
 
-export default function Dashboard() {
+export default function Dashboard({ params }: { params: { orgid: string } }) {
     const [session, setSession] = useState(null);
     const [regForm, regFormHandler] = useDisclosure(false);
     const [modalOpen, { open, close }] = useDisclosure(false);
@@ -78,7 +78,7 @@ export default function Dashboard() {
     }, [paymentFormData.values.ledger_transaction_id])
 
     useEffect(() => {
-        const user = supabase.from('ledger_accounts').select().then(async (res) => {
+        const user = supabase.from('ledger_accounts').select().eq('org_id', params.orgid).then(async (res) => {
             if (res.data.length > 0) {
                 await setLedger(res.data[0])
             } else {
@@ -87,13 +87,13 @@ export default function Dashboard() {
             setErrors({ ...errors, ledger_loading: false })
         })
 
-        supabase.from('ledger_transactions').select().filter('due_date', 'lt', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
+        supabase.from('ledger_transactions').select().eq('org_id', params.orgid).filter('due_date', 'lt', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
             setCurrentTransactions(res.data)
         })
-        supabase.from('ledger_transactions').select().filter('due_date', 'gte', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
+        supabase.from('ledger_transactions').select().eq('org_id', params.orgid).filter('due_date', 'gte', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
             setLaterTransactions(res.data)
         })
-        supabase.from('ledger_transactions').select().eq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
+        supabase.from('ledger_transactions').select().eq('org_id', params.orgid).eq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
             setOldTransactions(res.data)
         })
 
@@ -106,20 +106,21 @@ export default function Dashboard() {
         setErrors({ ...errors, ledger_loading: true })
         await supabase.from('ledger_accounts').insert({
             ...dataFormValues,
+            org_id: params.orgid,
             first_name: formatName(dataFormValues.first_name),
             last_name: formatName(dataFormValues.last_name)
         })
-        const { data, error } = await supabase.from('ledger_accounts').select()
+        const { data, error } = await supabase.from('ledger_accounts').select().eq('org_id', params.orgid)
         if (data) {
-            const user = await supabase.from('ledger_accounts').select().then(async (res) => {
+            const user = await supabase.from('ledger_accounts').select().eq('org_id', params.orgid).then(async (res) => {
                 if (res.data.length > 0) {
-                    supabase.from('ledger_transactions').select().filter('due_date', 'lt', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
+                    supabase.from('ledger_transactions').select().eq('org_id', params.orgid).filter('due_date', 'lt', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
                         setCurrentTransactions(res.data)
                     })
-                    supabase.from('ledger_transactions').select().filter('due_date', 'gte', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
+                    supabase.from('ledger_transactions').select().eq('org_id', params.orgid).filter('due_date', 'gte', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
                         setLaterTransactions(res.data)
                     })
-                    supabase.from('ledger_transactions').select().eq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
+                    supabase.from('ledger_transactions').select().eq('org_id', params.orgid).eq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
                         setOldTransactions(res.data)
                     })
                     await setLedger(res.data[0])
@@ -150,20 +151,17 @@ export default function Dashboard() {
             })
         }).then(async (res) => {
             const a = await res.json()
+            Promise.all([
+                supabase.from('ledger_transactions').select().eq('org_id', params.orgid).filter('due_date', 'lt', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }),
+                supabase.from('ledger_transactions').select().eq('org_id', params.orgid).filter('due_date', 'gte', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }),
+                supabase.from('ledger_transactions').select().eq('org_id', params.orgid).eq('true_amount', 0).order('created_at', { ascending: false })
+            ]).then(([currentResult, laterResult, oldResult]) => {
+                setCurrentTransactions(currentResult.data);
+                setLaterTransactions(laterResult.data);
+                setOldTransactions(oldResult.data);
+            })
             return a.data[0]
         })
-
-        let updatedTransactions = currentTransactions.map(transaction => {
-            if (transaction.id === payment.id) {
-                setLedger({
-                    ...ledger,
-                    balance: ledger.balance - titleData[0].true_amount
-                })
-                return payment;
-            }
-            return transaction;
-        });
-        setCurrentTransactions(updatedTransactions);
 
         await setErrors({ ...errors, ledger_loading: false })
         close()

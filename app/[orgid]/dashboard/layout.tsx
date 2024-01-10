@@ -10,18 +10,19 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter, usePathname } from 'next/navigation';
 
 export default function Demo({
-    children,
+    children, params
 }: {
-    children: React.ReactNode
+    children: React.ReactNode,
+    params: { orgid: string }
 }) {
     const [opened, { toggle }] = useDisclosure();
     const [active, setActive] = useState(0);
     const router = useRouter()
     const [data, setData] = useState([
-        { label: 'Dues & rent', description: 'Make a payment', url: '/dashboard/overview' },
-        { label: 'Manage budgets', description: 'Request reimbursements', url: '/dashboard/budgets' },
-        { label: 'Payment methods', description: 'Connect a bank', url: '/dashboard/payment-methods' },
-        { label: 'Sign out', description: '', url: '/dashboard/signout' },
+        { label: 'Dues & rent', description: 'Make a payment', url: `/${params.orgid}/dashboard/overview` },
+        { label: 'Manage budgets', description: 'Request reimbursements', url: `/${params.orgid}/dashboard/budgets` },
+        { label: 'Payment methods', description: 'Connect a bank', url: `/${params.orgid}/dashboard/payment-methods` },
+        { label: 'Sign out', description: '', url: `/${params.orgid}/dashboard/signout` },
         // { label: 'Payment history', description: 'See past payments', url: '/dashboard/1' },
         ])
 
@@ -42,7 +43,7 @@ export default function Demo({
             if ("admin" in res.data.user.app_metadata) {
                 if (res.data.user.app_metadata.admin == true) {
                     setData([
-                        { label: 'Administrate', description: 'God mode', url: '/dashboard/admin' },
+                        { label: 'Administrate', description: 'God mode', url: `/${params.orgid}/dashboard/admin` },
                         ...data
                     ])
                 }

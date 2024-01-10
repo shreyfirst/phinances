@@ -58,7 +58,8 @@ export default function Login() {
     const { data, error } = await supabase.auth.verifyOtp({ phone: `1${phoneNumber.replace(/\D/g, '')}`, token: otp, type: "sms" });
     if (error) setErrors({ ...errors, otp: true, loading: false });
     else {
-      router.push('/dashboard/overview')
+      const current_orgs = data.user.app_metadata.org_member
+      router.push(`/${current_orgs[0]}/dashboard/overview`)
       // setErrors({ ...errors, loading: false });
     }
   };

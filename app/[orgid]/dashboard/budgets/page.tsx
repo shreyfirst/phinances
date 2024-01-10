@@ -8,7 +8,7 @@ import { DataTable } from 'mantine-datatable';
 import { useEffect, useMemo, useRef, useState } from "react";
 import dayjs from 'dayjs'
 
-export default function Admin() {
+export default function Budgets({ params }: { params: { orgid: string } }) {
 
   const supabase = createClientComponentClient()
   const [budgets, setBudgets] = useState([])
@@ -30,7 +30,8 @@ export default function Admin() {
   const newBudget = useForm({
     initialValues: {
       name: '',
-      private: false
+      private: false,
+      org_id: params.orgid
     },
     validate: {
       name: (value) => (value.length < 3 ? "Length must be minimum three characters" : null)
@@ -41,7 +42,8 @@ export default function Admin() {
       in_budget_id: '',
       out_budget_id: '',
       amount: 0,
-      description: ''
+      description: '',
+      org_id: params.orgid
     },
     validate: {
       description: (value) => (value.length < 3 ? "Length must be minimum three characters" : null)
@@ -52,7 +54,8 @@ export default function Admin() {
       in_budget_id: '',
       out_budget_id: '',
       amount: 0,
-      description: ''
+      description: '',
+      org_id: params.orgid
     },
     validate: {
       description: (value) => (value.length < 3 ? "Length must be minimum three characters" : null)
@@ -61,7 +64,7 @@ export default function Admin() {
 
   useEffect(() => {
     setLoading(true)
-    supabase.from('budget_accounts').select().order('name').then((res) => {
+    supabase.from('budget_accounts').select().eq('org_id', params.orgid).order('name').then((res) => {
       const public_budgets = res.data.filter((budget) => {
         if (budget.private == false) {
           return true
@@ -79,8 +82,8 @@ export default function Admin() {
   useEffect(() => {
 
     if (activeBudget.id) {
-      supabase.from('budget_transactions').select().eq('in_budget_id', activeBudget["id"]).then((res) => setInTransactions(res.data))
-      supabase.from('budget_transactions').select().eq('out_budget_id', activeBudget["id"]).then((res) => setOutTransactions(res.data))
+      supabase.from('budget_transactions').select().eq('org_id', params.orgid).eq('in_budget_id', activeBudget["id"]).then((res) => setInTransactions(res.data))
+      supabase.from('budget_transactions').select().eq('org_id', params.orgid).eq('out_budget_id', activeBudget["id"]).then((res) => setOutTransactions(res.data))
       viewport.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
     } else {
       setInTransactions([])
@@ -97,16 +100,12 @@ export default function Admin() {
   }
 
   async function createTransfer(formData) {
-    console.log({
-      ...formData,
-      amount: (formData.amount * 100)
-    })
 
     let transaction = null;
     setLoading(true)
 
     if (formData.in_budget_id == reimbursementBudget.id) {
-      const account_id = await supabase.from('ledger_accounts').select().then(async (res) => {
+      const account_id = await supabase.from('ledger_accounts').select().eq('org_id', params.orgid).then(async (res) => {
           return res.data[0].id
     })
       transaction = await supabase.from('ledger_transactions').insert({
@@ -114,7 +113,8 @@ export default function Admin() {
         amount: (formData.amount * 100),
         approved: false,
         description: `Reimbursement: ${formData.description}`,
-        due_date: dayjs().add(3, 'day').toISOString()
+        due_date: dayjs().add(3, 'day').toISOString(),
+        org_id: params.orgid
       }).select().then((res)=>res.data[0])
 
     }
@@ -124,11 +124,10 @@ export default function Admin() {
       ledger_transaction: transaction.id,
       amount: (formData.amount * 100)
     }).select().then((res) => {
-      // setBudgets([...budgets, ...res.data])
       budgetTransferHandler.close()
       reimbursementHandler.close()
       setActiveBudget({ id: null })
-      supabase.from('budget_accounts').select().order('name').then((res) => {
+      supabase.from('budget_accounts').select().eq('org_id', params.orgid).order('name').then((res) => {
         const public_budgets = res.data.filter((budget) => {
           if (budget.private == false) {
             return true
@@ -286,7 +285,7 @@ export default function Admin() {
       {/* <Group mb={20} gap={10}><Button onClick={newBudgetHandler.open}>Create new budget</Button><Button onClick={budgetTransferHandler.open}>Transfer</Button></Group> */}
       <Flex className="flex-1 flex-wrap" gap={10} mb={20}>
         {budgets.map((item) => {
-          return (<Card key={item.id} className="grow">
+          return (<Card key={item.id} radius={'md'} withBorder={(item.id == activeBudget.id)} >
             <Stack gap={0}>
 
               <Group gap={20}><Text size='sm'>{item.name} (<Text span fw={700}>${(item.balance / 100).toFixed(2)}</Text>)</Text>

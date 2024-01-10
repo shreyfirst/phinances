@@ -29,6 +29,7 @@ interface AdminPaymentModalProps {
   onClose(): any
   onNewTransactions(transactions: any): any
   [x: string | number | symbol]: unknown
+  org_id: string
 }
 
 export default function AdminPaymentModal(props: AdminPaymentModalProps) {
@@ -116,12 +117,13 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
           account_id: value.id,
           amount: (paymentForm.values.type == "charge" ? value.checked_amount * -100 : value.checked_amount * 100),
           description: paymentForm.values.description,
-          due_date: dayjs(paymentForm.values.due_date).utc().format('YYYY-MM-DD HH:mm:ssZ')
+          due_date: dayjs(paymentForm.values.due_date).utc().format('YYYY-MM-DD HH:mm:ssZ'),
+          org_id: props.org_id
         });
     })
     paymentForm.validate()
     if (paymentForm.isValid() == true) {
-      console.log(paymentForm.errors)
+      console.log(paymentForm.values.payments)
       setPaymentLocked(true)
     } else {
       ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' })

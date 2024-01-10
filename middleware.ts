@@ -17,7 +17,8 @@ export async function middleware(req: NextRequest) {
 
   // if user is signed in and the current path is / redirect the user to /account
   if (user && (req.nextUrl.pathname === ('/'))) {
-    return NextResponse.redirect(new URL('/dashboard/overview', req.url))
+    const authUser = (await supabase.auth.getUser()).data.user.app_metadata.org_member
+    return NextResponse.redirect(new URL(`/${authUser[0]}/dashboard/overview`, req.url))
   }
   
 
