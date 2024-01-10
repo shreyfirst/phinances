@@ -1,5 +1,5 @@
 'use client';
-import { ActionIcon, Badge, Button, Checkbox, Table, Text, Modal, Pill, Radio, Tabs, Card, Flex, Stack, Group, Input, SimpleGrid, Combobox, useCombobox, InputBase, NumberInput, ScrollArea, Menu, InputLabel, Box, rem } from "@mantine/core";
+import { ActionIcon, Badge, Button, Checkbox, Table, Text, Modal, Pill, Radio, Tabs, Card, Flex, Stack, Group, Input, SimpleGrid, Combobox, useCombobox, InputBase, NumberInput, ScrollArea, Menu, InputLabel, Box, rem, LoadingOverlay } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useDisclosure, useListState } from "@mantine/hooks";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
@@ -19,6 +19,7 @@ export default function Admin() {
   const [activeBudget, setActiveBudget] = useState({ id: null })
   const [reimbursementBudget, setReimbursementBudget] = useState({ id: null })
   const [newBudgetOpen, newBudgetHandler] = useDisclosure(false);
+  const [loading, setLoading] = useState(false)
   const budgets_in = useCombobox({
     onDropdownClose: () => budgets_in.resetSelectedOption(),
   });
@@ -60,7 +61,7 @@ export default function Admin() {
   });
 
   useEffect(() => {
-
+    setLoading(true)
     supabase.from('budget_accounts').select().order('name').then((res) => {
       const public_budgets = res.data.filter((budget) => {
         if (budget.private == false) {
@@ -70,6 +71,7 @@ export default function Admin() {
       setBudgets(public_budgets)
       const reimburse = res.data.find((budget) => budget.type == "PAYMENT_REQUESTS")
       setReimbursementBudget(reimburse)
+      setLoading(false)
     })
 
   }, [])
@@ -102,6 +104,7 @@ export default function Admin() {
     })
 
     let transaction = null;
+    setLoading(true)
 
     if (formData.in_budget_id == reimbursementBudget.id) {
       const account_id = await supabase.from('ledger_accounts').select().then(async (res) => {
@@ -138,6 +141,8 @@ export default function Admin() {
         setBudgets(public_budgets)
         const reimburse = res.data.find((budget) => budget.type == "PAYMENT_REQUESTS")
         setReimbursementBudget(reimburse)
+        setLoading(false)
+
       })
     })
   }
@@ -281,6 +286,7 @@ export default function Admin() {
         </form>
 
       </Modal>
+      <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
       {/* <Group mb={20} gap={10}><Button onClick={newBudgetHandler.open}>Create new budget</Button><Button onClick={budgetTransferHandler.open}>Transfer</Button></Group> */}
       <Flex className="flex-1 flex-wrap" gap={10} mb={20}>
         {budgets.map((item) => {
