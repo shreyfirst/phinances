@@ -19,6 +19,7 @@ export default function Demo({
     const router = useRouter()
     const [data, setData] = useState([
         { label: 'Dues & rent', description: 'Make a payment', url: '/dashboard/overview' },
+        { label: 'Manage budgets', description: 'Request reimbursements', url: '/dashboard/budgets' },
         { label: 'Payment methods', description: 'Connect a bank', url: '/dashboard/payment-methods' },
         { label: 'Sign out', description: '', url: '/dashboard/signout' },
         // { label: 'Payment history', description: 'See past payments', url: '/dashboard/1' },
