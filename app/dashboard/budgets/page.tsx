@@ -6,6 +6,8 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { IconEdit, IconEye, IconMenu2, IconSquareRoundedPlus, IconTrash } from "@tabler/icons-react";
 import { DataTable } from 'mantine-datatable';
 import { useEffect, useMemo, useRef, useState } from "react";
+import dayjs from 'dayjs'
+import { notifications } from '@mantine/notifications';
 
 export default function Admin() {
 
@@ -93,13 +95,34 @@ export default function Admin() {
     })
   }
 
-  function createTransfer(formData) {
+  async function createTransfer(formData) {
     console.log({
       ...formData,
       amount: (formData.amount * 100)
     })
+
+    let transaction = null;
+
+    if (formData.in_budget_id == reimbursementBudget.id) {
+      const account_id = await supabase.from('ledger_accounts').select().then(async (res) => {
+          return res.data[0].id
+    })
+      transaction = await supabase.from('ledger_transactions').insert({
+        account_id: account_id,
+        amount: (formData.amount * 100),
+        approved: false,
+        description: `Reimbursement: ${formData.description}`,
+        due_date: dayjs().add(3, 'day').toISOString()
+      }).select().then((res)=>res.data[0])
+      notifications.show({
+        title: 'Reimbursement created',
+        message: 'It will take 1-3 days to be approved',
+      })
+    }
+
     supabase.from('budget_transactions').insert({
       ...formData,
+      ledger_transaction: transaction.id,
       amount: (formData.amount * 100)
     }).select().then((res) => {
       // setBudgets([...budgets, ...res.data])

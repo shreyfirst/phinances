@@ -1,7 +1,7 @@
 // export async function POST(request: NextRequest) {
 
-    // const cookieStore = cookies()
-    // const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+// const cookieStore = cookies()
+// const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
 
 //     const req_data = await request.json()
 //     const { data, error } = await supabase.from('ledger_accounts').insert(req_data).select()
@@ -58,7 +58,7 @@
 //         return Response.json({}, {status: 404})
 //     }
 
-    // return Response.json({})
+// return Response.json({})
 
 // }
 
@@ -80,21 +80,23 @@ export async function POST(
   request: NextRequest
 ) {
 
-    const body = await request.json()
-    const supa = new SupabaseClient("https://zfdtxahxffjgbqqslppn.supabase.co",process.env.SUPABASE_MASTER)
-    // const bank_account = await suapab
+  const body = await request.json()
+  const supa = new SupabaseClient("https://zfdtxahxffjgbqqslppn.supabase.co", process.env.SUPABASE_MASTER)
+  // const bank_account = await suapab
 
-    const bank_account = await supa.from('bank_accounts').select().eq("id", body.bank_account_id)
-    const bank_numbers = await supa.from('bank_numbers').select().eq("id", bank_account.data[0].numbers)
-    const og_transaction = await supa.from('ledger_transactions').select().eq("id", body.transaction_id)
-    const user = (await supa.auth.admin.getUserById(bank_account.data[0].user)).data.user.user_metadata
-    const routing = await increase.routingNumbers.list({
-      routing_number: bank_numbers.data[0].routing_number
-    }).then((res)=>{
-      return res.data
-    })
+  const bank_account = await supa.from('bank_accounts').select().eq("id", body.bank_account_id)
+  const bank_numbers = await supa.from('bank_numbers').select().eq("id", bank_account.data[0].numbers)
+  const og_transaction = await supa.from('ledger_transactions').select().eq("id", body.transaction_id)
+  const user = (await supa.auth.admin.getUserById(bank_account.data[0].user)).data.user.user_metadata
+  const routing = await increase.routingNumbers.list({
+    routing_number: bank_numbers.data[0].routing_number
+  }).then((res) => {
+    return res.data
+  })
 
-    if ((routing.length > 0 && routing[0].ach_transfers == "supported") || process.env.ENVIRONMENT == "sandbox"){
+  if (og_transaction.data[0].approved == true) {
+
+    if ((routing.length > 0 && routing[0].ach_transfers == "supported") || process.env.ENVIRONMENT == "sandbox") {
       const payment = await increase.achTransfers.create({
         // account_id: "account_1n7cmbcqo8a98f5xirzz",
         account_id: process.env["INCREASE_ARAP_ACCOUNT"],
@@ -110,7 +112,7 @@ export async function POST(
         require_approval: false
       })
       const flow = (og_transaction.data[0].amount > 0 ? { outflow: (og_transaction.data[0].true_amount * -1) } : { inflow: (og_transaction.data[0].true_amount * -1) })
-      const transaction = await supa.from('ledger_transactions').update({ 
+      const transaction = await supa.from('ledger_transactions').update({
         increase: payment.id,
         ...flow
       }).eq('id', body.transaction_id).select()
@@ -119,5 +121,11 @@ export async function POST(
       return Response.json(routing)
     }
 
-    
+  } else {
+    return Response.json({
+      "error": "unauthorized"
+    })
+  }
+
+
 }

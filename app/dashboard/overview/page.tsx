@@ -267,7 +267,7 @@ export default function Dashboard() {
                                                     {/* <Table.Td>{new Date(value.created_at).toDateString()}</Table.Td> */}
                                                     <Table.Td>{value.description}</Table.Td>
                                                     <Table.Td>
-                                                        {value.true_amount !== 0 ? (
+                                                        {value.approved == true ? (value.true_amount !== 0 ? (
                                                             <Button size='compact-sm' onClick={() => {
                                                                 paymentFormData.setFieldValue('ledger_transaction_id', value.id);
                                                                 open();
@@ -278,7 +278,7 @@ export default function Dashboard() {
                                                             </Button>
                                                         ) : (
                                                             <Text size='sm'>{transactionMessage(value.inflow, value.outflow)}</Text>
-                                                        )}
+                                                        )) : <Text size='sm'>Awaiting approval</Text>}
                                                     </Table.Td>
 
                                                     {/* <Table.Td><Input variant="unstyled"></Input></Table.Td> */}

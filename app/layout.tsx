@@ -3,10 +3,12 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css';
+import '@mantine/notifications/styles.css';
 import { MantineProvider, ColorSchemeScript, rem } from '@mantine/core';
 import Head from 'next/head';
 import '@mantine/core/styles.layer.css';
 import 'mantine-datatable/styles.layer.css';
+import { Notifications } from '@mantine/notifications';
 
 const inter = Inter({ subsets: ['latin'] })
 const defaultUrl = process.env.VERCEL_URL
@@ -51,6 +53,7 @@ export default function RootLayout({
           },
         }}
         >
+          <Notifications />
           {children}
         </MantineProvider>
       </body>
