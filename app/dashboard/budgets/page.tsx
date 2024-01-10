@@ -7,7 +7,6 @@ import { IconEdit, IconEye, IconMenu2, IconSquareRoundedPlus, IconTrash } from "
 import { DataTable } from 'mantine-datatable';
 import { useEffect, useMemo, useRef, useState } from "react";
 import dayjs from 'dayjs'
-import { notifications } from '@mantine/notifications';
 
 export default function Admin() {
 
@@ -117,10 +116,7 @@ export default function Admin() {
         description: `Reimbursement: ${formData.description}`,
         due_date: dayjs().add(3, 'day').toISOString()
       }).select().then((res)=>res.data[0])
-      notifications.show({
-        title: 'Reimbursement created',
-        message: 'It will take 1-3 days to be approved',
-      })
+
     }
 
     supabase.from('budget_transactions').insert({
