@@ -17,7 +17,7 @@ const defaultUrl = process.env.VERCEL_URL
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
   title: 'Phinances Portal',
-  description: 'Billing & reimbursements for Phi Delta Theta',
+  description: 'Billing & reimbursements for Greek orgs',
   icons: {
     icon: '/icon.png'
   },

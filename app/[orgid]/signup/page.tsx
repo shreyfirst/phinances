@@ -16,10 +16,11 @@ function phoneFormat(input) {
   return input;
 }
 
-export default function Login() {
+export default function Login({ params }: { params: { orgid: string } }) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
+  const [org, setOrg] = useState({});
   const [errors, setErrors] = useState({
     "phoneNumber": false,
     "otp": false,
@@ -49,6 +50,11 @@ export default function Login() {
   }, [phoneNumber])
 
   useEffect(()=>{
+    console.log("orgid",params.orgid)
+    supabase.from('orgs').select().eq('id', params.orgid).then((res)=>setOrg(res.data[0]))
+  }, [params.orgid])
+
+  useEffect(()=>{
     if (otp.length == 6 && !errors.otp) {
       verifyOtp()
     }
@@ -60,26 +66,25 @@ export default function Login() {
     if (error) setErrors({ ...errors, otp: true, loading: false });
     else {
       const current_orgs = data.user.app_metadata.org_member
-      if (current_orgs && current_orgs.length > 0) { router.push(`/${current_orgs[0]}/dashboard/overview`) }
-      else { 
-        supabase.auth.signOut()
-        setErrors({ ...errors, noOrg: true }) 
-      }
-      
-      // setErrors({ ...errors, loading: false });
+      await supabase.rpc('add_user_to_org', {orgid: params.orgid})
+      supabase.auth.refreshSession()
+      router.push(`/${params.orgid}/dashboard/overview`)
     }
   };
 
   return (
     <Container size={420} my={40}>
-      <Title ta="center">
-        Phinances Portal
-      </Title>
-      <Text fw={700} c="dimmed" size="sm" ta="center" mt={5}>
-        Your central hub for all Greek organization finances
-      </Text>
+        
+
 
       <Paper withBorder shadow="md" p={30} my={30} radius="md">
+      <Text fw={700} c="dimmed" size="md" ta="center" mt={5}>
+        You are registering for
+      </Text>
+      <Title ta="center" mb={20}>
+        {(org['name'] ? (`${org['name']}`) : (null))}
+      </Title>
+
         <form>
           <TextInput
             // ref={otp_ref}

@@ -38,8 +38,8 @@ export default function Demo({
     }, [path, data]);
 
     useEffect(() => {
+        // supabase.from('orgs')
         supabase.auth.getUser().then((res) => {
-            console.log(res.data)
             if ("admin" in res.data.user.app_metadata) {
                 if (res.data.user.app_metadata.admin == true) {
                     setData([
