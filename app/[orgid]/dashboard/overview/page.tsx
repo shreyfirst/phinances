@@ -147,7 +147,8 @@ export default function Dashboard({ params }: { params: { orgid: string } }) {
                 "amount": titleData[0].true_amount,
                 "description": titleData[0].description,
                 "bank_account_id": paymentFormData.values.bank_account_id,
-                "transaction_id": paymentFormData.values.ledger_transaction_id
+                "transaction_id": paymentFormData.values.ledger_transaction_id,
+                "org_id": params.orgid
             })
         }).then(async (res) => {
             const a = await res.json()
