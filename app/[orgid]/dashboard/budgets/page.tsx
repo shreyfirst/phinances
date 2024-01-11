@@ -43,7 +43,6 @@ export default function Budgets({ params }: { params: { orgid: string } }) {
       out_budget_id: '',
       amount: 0,
       description: '',
-      org_id: params.orgid
     },
     validate: {
       description: (value) => (value.length < 3 ? "Length must be minimum three characters" : null)
@@ -55,7 +54,6 @@ export default function Budgets({ params }: { params: { orgid: string } }) {
       out_budget_id: '',
       amount: 0,
       description: '',
-      org_id: params.orgid
     },
     validate: {
       description: (value) => (value.length < 3 ? "Length must be minimum three characters" : null)
@@ -82,8 +80,8 @@ export default function Budgets({ params }: { params: { orgid: string } }) {
   useEffect(() => {
 
     if (activeBudget.id) {
-      supabase.from('budget_transactions').select().eq('org_id', params.orgid).eq('in_budget_id', activeBudget["id"]).then((res) => setInTransactions(res.data))
-      supabase.from('budget_transactions').select().eq('org_id', params.orgid).eq('out_budget_id', activeBudget["id"]).then((res) => setOutTransactions(res.data))
+      supabase.from('budget_transactions').select().eq('in_budget_id', activeBudget["id"]).then((res) => setInTransactions(res.data))
+      supabase.from('budget_transactions').select().eq('out_budget_id', activeBudget["id"]).then((res) => setOutTransactions(res.data))
       viewport.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
     } else {
       setInTransactions([])
@@ -113,8 +111,7 @@ export default function Budgets({ params }: { params: { orgid: string } }) {
         amount: (formData.amount * 100),
         approved: false,
         description: `Reimbursement: ${formData.description}`,
-        due_date: dayjs().add(3, 'day').toISOString(),
-        org_id: params.orgid
+        due_date: dayjs().add(3, 'day').toISOString()
       }).select().then((res)=>res.data[0])
 
     }

@@ -87,13 +87,13 @@ export default function Dashboard({ params }: { params: { orgid: string } }) {
             setErrors({ ...errors, ledger_loading: false })
         })
 
-        supabase.from('ledger_transactions').select().eq('org_id', params.orgid).filter('due_date', 'lt', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
+        supabase.from('ledger_transactions').select().filter('due_date', 'lt', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
             setCurrentTransactions(res.data)
         })
-        supabase.from('ledger_transactions').select().eq('org_id', params.orgid).filter('due_date', 'gte', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
+        supabase.from('ledger_transactions').select().filter('due_date', 'gte', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
             setLaterTransactions(res.data)
         })
-        supabase.from('ledger_transactions').select().eq('org_id', params.orgid).eq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
+        supabase.from('ledger_transactions').select().eq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
             setOldTransactions(res.data)
         })
 
@@ -114,13 +114,13 @@ export default function Dashboard({ params }: { params: { orgid: string } }) {
         if (data) {
             const user = await supabase.from('ledger_accounts').select().eq('org_id', params.orgid).then(async (res) => {
                 if (res.data.length > 0) {
-                    supabase.from('ledger_transactions').select().eq('org_id', params.orgid).filter('due_date', 'lt', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
+                    supabase.from('ledger_transactions').select().filter('due_date', 'lt', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
                         setCurrentTransactions(res.data)
                     })
-                    supabase.from('ledger_transactions').select().eq('org_id', params.orgid).filter('due_date', 'gte', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
+                    supabase.from('ledger_transactions').select().filter('due_date', 'gte', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
                         setLaterTransactions(res.data)
                     })
-                    supabase.from('ledger_transactions').select().eq('org_id', params.orgid).eq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
+                    supabase.from('ledger_transactions').select().eq('true_amount', 0).order('created_at', { ascending: false }).then(async (res) => {
                         setOldTransactions(res.data)
                     })
                     await setLedger(res.data[0])
@@ -152,9 +152,9 @@ export default function Dashboard({ params }: { params: { orgid: string } }) {
         }).then(async (res) => {
             const a = await res.json()
             Promise.all([
-                supabase.from('ledger_transactions').select().eq('org_id', params.orgid).filter('due_date', 'lt', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }),
-                supabase.from('ledger_transactions').select().eq('org_id', params.orgid).filter('due_date', 'gte', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }),
-                supabase.from('ledger_transactions').select().eq('org_id', params.orgid).eq('true_amount', 0).order('created_at', { ascending: false })
+                supabase.from('ledger_transactions').select().filter('due_date', 'lt', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }),
+                supabase.from('ledger_transactions').select().filter('due_date', 'gte', dayjs().add(5, 'day').toISOString()).neq('true_amount', 0).order('created_at', { ascending: false }),
+                supabase.from('ledger_transactions').select().eq('true_amount', 0).order('created_at', { ascending: false })
             ]).then(([currentResult, laterResult, oldResult]) => {
                 setCurrentTransactions(currentResult.data);
                 setLaterTransactions(laterResult.data);
