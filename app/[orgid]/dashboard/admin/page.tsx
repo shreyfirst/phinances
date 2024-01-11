@@ -34,7 +34,7 @@ export default function Admin({ params }: { params: { orgid: string } }) {
 
   return (
     <>
-      <AdminPaymentModal org_id={`${params.orgid}`} accounts={accounts} opened={opened} onClose={close} onNewTransactions={handleNewTransactions} title="" centered/>
+      <AdminPaymentModal accounts={accounts} opened={opened} onClose={close} onNewTransactions={handleNewTransactions} title="" centered/>
       <Tabs variant='outline' defaultValue="accounts">
         <Tabs.List>
           <Tabs.Tab value="accounts" >
