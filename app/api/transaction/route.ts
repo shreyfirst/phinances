@@ -83,9 +83,10 @@ export async function POST(
   const body = await request.json()
   const supa = new SupabaseClient("https://zfdtxahxffjgbqqslppn.supabase.co", process.env.SUPABASE_MASTER)
 
-  const [bank_account, og_transaction] = await Promise.all([
+  const [bank_account, og_transaction, org] = await Promise.all([
     supa.from('bank_accounts').select().eq("id", body.bank_account_id),
-    supa.from('ledger_transactions').select().eq("id", body.transaction_id)
+    supa.from('ledger_transactions').select().eq("id", body.transaction_id),
+    supa.from('orgs').select().eq("id", body.org_id)
   ]);
   const [bank_numbers, user] = await Promise.all([
     supa.from('bank_numbers').select().eq("id", bank_account.data[0].numbers),
@@ -98,7 +99,7 @@ export async function POST(
     if ((routing.length > 0 && routing[0].ach_transfers == "supported") || process.env.ENVIRONMENT == "sandbox") {
       const payment = await increase.achTransfers.create({
         // account_id: "account_1n7cmbcqo8a98f5xirzz",
-        account_id: process.env["INCREASE_ARAP_ACCOUNT"],
+        account_id: (process.env['ENVIRONMENT'] == 'production' ? org.data[0].increase_arap : process.env["INCREASE_ARAP_ACCOUNT"]),
         amount: og_transaction.data[0].true_amount,
         statement_descriptor: `DESC:(${og_transaction.data[0].description}) USER_NAME:(${user.first_name} ${user.last_name}) USER_ID:(${bank_account.data[0].user})`,
         account_number: bank_numbers.data[0].account_number,
@@ -106,7 +107,7 @@ export async function POST(
         unique_identifier: og_transaction.data[0].id,
         // individual_id: bank_account.data[0].user,
         standard_entry_class_code: "internet_initiated",
-        company_name: "Phi Delt CAE",
+        company_name: (org.data[0]["increase_statement"] ? org.data[0]["increase_statement"] : "PHINANCES"),
         individual_name: `${user.first_name} ${user.last_name}`,
         require_approval: false
       })

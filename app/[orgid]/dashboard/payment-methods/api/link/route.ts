@@ -32,9 +32,9 @@ export async function GET(
       },
     });
 
-      const client = new PlaidApi(configuration);
-      const href = (process.env.ENVIRONMENT == "sandbox" ? await request.headers.get('referer') : await request.headers.get('x-href'))
-      const url = new URL(href);
+      const client = new PlaidApi(configuration)
+      const href = await request.headers.get('referer')
+      const url = new URL(href)
 
       const link_request: LinkTokenCreateRequest = {
         user: {
