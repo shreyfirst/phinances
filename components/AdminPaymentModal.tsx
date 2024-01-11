@@ -37,6 +37,7 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
   const [defaultAmount, setDefaultAmount] = useState(0)
   const [paymentLocked, setPaymentLocked] = useState(false)
   const checked = values.filter((value) => value.checked == true)
+  
   const paymentForm = useForm({
     initialValues: {
       type: 'charge',
@@ -86,7 +87,6 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
         setLoading(false)
         closeModal()
       })
-    // console.log("data", data)
   }
 
   const name = (payment) => {

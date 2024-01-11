@@ -15,8 +15,6 @@ export default function Admin({ params }: { params: { orgid: string } }) {
   const [opened, { open, close, toggle }] = useDisclosure(false);
 
   useEffect(() => {
-
-    console.log(params.orgid)
     
     supabase.rpc('as_admin', { "sql_query": "SELECT json_agg(t) FROM (select * from ledger_accounts order by first_name asc) t" })
       .then((res) => {

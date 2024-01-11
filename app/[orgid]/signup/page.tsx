@@ -50,7 +50,6 @@ export default function Login({ params }: { params: { orgid: string } }) {
   }, [phoneNumber])
 
   useEffect(()=>{
-    console.log("orgid",params.orgid)
     supabase.from('orgs').select().eq('id', params.orgid).then((res)=>setOrg(res.data[0]))
   }, [params.orgid])
 
