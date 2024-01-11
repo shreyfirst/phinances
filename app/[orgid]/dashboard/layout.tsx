@@ -29,9 +29,9 @@ export default function Demo({
     const [org, setOrg] = useState({ name: "" })
     const router = useRouter()
     const [data, setData] = useState([
-        { label: 'Dues & rent', description: 'Make a payment', url: `/${params.orgid}/dashboard/overview` },
-        { label: 'Payment methods', description: 'Connect a bank', url: `/${params.orgid}/dashboard/payment-methods` },
-        { label: 'Sign out', description: '', url: `/${params.orgid}/dashboard/signout` },
+        { order: 0, label: 'Dues & rent', description: 'Make a payment', url: `/${params.orgid}/dashboard/overview` },
+        { order: 5, label: 'Payment methods', description: 'Connect a bank', url: `/${params.orgid}/dashboard/payment-methods` },
+        { order: 10, label: 'Sign out', description: '', url: `/${params.orgid}/dashboard/signout` },
         // { label: 'Payment history', description: 'See past payments', url: '/dashboard/1' },
     ])
 
@@ -47,41 +47,26 @@ export default function Demo({
     }, [path, data]);
 
     useEffect(() => {
-        // supabase.from('orgs')
-        supabase.from('orgs').select().eq('id', params.orgid).then(async (res) => {
-            setOrg(res.data[0])
-            if (res.data[0].budgets == true) {
-                console.log([
-                    // part of the array before the specified index
-                    ...data.slice(0, 2),
-                    // inserted item
-                    { label: 'Manage budgets', description: 'Request reimbursements', url: `/${params.orgid}/dashboard/budgets` },
-                    // part of the array after the specified index
-                    ...data.slice(2)
-                ])
-                setData([
-                    // part of the array before the specified index
-                    ...data.slice(0, 2),
-                    // inserted item
-                    { label: 'Manage budgets', description: 'Request reimbursements', url: `/${params.orgid}/dashboard/budgets` },
-                    // part of the array after the specified index
-                    ...data.slice(2)
-                ])
-            }
-        })
-        supabase.auth.getUser().then((res) => {
-            if ("admin" in res.data.user.app_metadata) {
-                if (res.data.user.app_metadata.admin == true) {
-                    setData([
-                        { label: 'Administrate', description: 'God mode', url: `/${params.orgid}/dashboard/admin` },
-                        ...data
-                    ])
+        Promise.all([
+            supabase.from('orgs').select().eq('id', params.orgid).then(async (res) => {
+                setOrg(res.data[0])
+                if (res.data[0].budgets == true) {
+                    return { order: 4, label: 'Manage budgets', description: 'Request reimbursements', url: `/${params.orgid}/dashboard/budgets`}
                 }
-            }
+            }),
+            supabase.auth.getUser().then((res) => {
+                if ("admin" in res.data.user.app_metadata) {
+                    if (res.data.user.app_metadata.admin == true) {
+                        return { order: 7, label: 'Administrate', description: 'God mode', url: `/${params.orgid}/dashboard/admin` }
+                    }
+                }
+            })
+        ]).then(([budgets, admin])=>{
+            setData([...data, ...(budgets ? [budgets] : []), ...(admin ? [admin] : [])])
         })
     }, [])
 
-    const items = data.map((item, index) => (
+    const items = data.sort((a, b)=>a.order - b.order).map((item, index) => (
         <NavLink
             key={item.label}
             active={index === active}
