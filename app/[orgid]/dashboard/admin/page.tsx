@@ -47,6 +47,8 @@ export default function Admin({ params }: { params: { orgid: string } }) {
 
         <Tabs.Panel pt={10} value="accounts">
           <DataTable
+                      noRecordsText="No records to show"
+                      minHeight={250}
             columns={[{ accessor: 'first_name' }, { accessor: 'last_name' }, { accessor: 'email_address' }, { accessor: 'balance', render: (record) => <Badge size='lg' color={record.balance < 0 ? "red" : "green"}>$ {(record.balance/100).toFixed(2)}</Badge> }]}
             records={accounts}
           />
@@ -56,7 +58,7 @@ export default function Admin({ params }: { params: { orgid: string } }) {
         <Button fullWidth my={5} size="sm" onClick={toggle}>New</Button>
           <DataTable
             noRecordsText="No records to show"
-            minHeight={150}
+            minHeight={250}
             columns={[
               {
                 accessor: 'account_id',
