@@ -2,20 +2,22 @@
 import { ActionIcon, Badge, Button, Checkbox, Group, Modal, Pill, Radio, Tabs } from "@mantine/core";
 import { useDisclosure, useListState } from "@mantine/hooks";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { IconEdit, IconEye, IconTrash } from "@tabler/icons-react";
+import { IconCheck, IconEdit, IconEye, IconTrash, IconX } from "@tabler/icons-react";
 import { DataTable } from 'mantine-datatable';
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AdminPaymentModal from "@/components/AdminPaymentModal"
 
 export default function Admin({ params }: { params: { orgid: string } }) {
 
   const [accounts, setAccounts] = useState([])
   const [transactions, setTransactions] = useState([])
+  const [reimbursements, setReimbursements] = useState([])
+  const [budgets, setBudgets] = useState([])
   const supabase = createClientComponentClient()
   const [opened, { open, close, toggle }] = useDisclosure(false);
 
   useEffect(() => {
-    
+
     supabase.rpc('as_admin', { "sql_query": "SELECT json_agg(t) FROM (select * from ledger_accounts order by first_name asc) t" })
       .then((res) => {
         setAccounts(res.data)
@@ -24,15 +26,50 @@ export default function Admin({ params }: { params: { orgid: string } }) {
       .then((res) => {
         setTransactions(res.data)
       })
+    supabase.rpc('as_admin', { "sql_query": "SELECT json_agg(t) FROM (select * from budget_accounts where type = 'PAYMENT_REQUESTS') t" })
+      .then((res) => {
+        const reimbursement_id = res.data[0].id
+        // console.log(res.data)
+        supabase.rpc('as_admin', { "sql_query": `SELECT json_agg(t) FROM (select bt.*, to_jsonb(lt) as ledger_transaction_json from budget_transactions bt join ledger_transactions lt on bt.ledger_transaction = lt.id where in_budget_id = '${reimbursement_id}' ) t` })
+          .then((res) => {
+            setReimbursements(res.data)
+          })
+      })
+    supabase.rpc('as_admin', { "sql_query": "SELECT json_agg(t) FROM (select * from budget_accounts) t" })
+      .then((res) => {
+        setBudgets(res.data)
+      })
   }, [])
 
   async function handleNewTransactions(newTransactions) {
     setTransactions([...newTransactions, ...transactions])
   }
 
+  const findBudget = useMemo(() => {
+    const budgetFinder = (budget_id) => {
+      const budget = budgets.find((budget) => budget.id === budget_id)
+      return budget ? budget : { name: null }
+    }
+    return budgetFinder
+  }, [budgets])
+
+  const findAccount = useMemo(() => {
+    const accountFinder = (account_id) => {
+      const account = accounts.find((account) => account.id === account_id)
+      return account ? account : { name: null }
+    }
+    return accountFinder
+  }, [accounts])
+
+  async function reimbursementAction(approved: boolean, record: any) {
+    if (approved) {
+
+    }
+  }
+
   return (
     <>
-      <AdminPaymentModal accounts={accounts} opened={opened} onClose={close} onNewTransactions={handleNewTransactions} title="" centered/>
+      <AdminPaymentModal accounts={accounts} opened={opened} onClose={close} onNewTransactions={handleNewTransactions} title="" centered />
       <Tabs variant='outline' defaultValue="accounts">
         <Tabs.List>
           <Tabs.Tab value="accounts" >
@@ -41,19 +78,22 @@ export default function Admin({ params }: { params: { orgid: string } }) {
           <Tabs.Tab value="payments" >
             Payments
           </Tabs.Tab>
+          <Tabs.Tab value="reimbursements" >
+            Reimbursements
+          </Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel pt={10} value="accounts">
           <DataTable
-                      noRecordsText="No records to show"
-                      minHeight={250}
-            columns={[{ accessor: 'first_name' }, { accessor: 'last_name' }, { accessor: 'email_address' }, { accessor: 'balance', render: (record) => <Badge size='lg' color={record.balance < 0 ? "red" : "green"}>$ {(record.balance/100).toFixed(2)}</Badge> }]}
+            noRecordsText="No records to show"
+            minHeight={250}
+            columns={[{ accessor: 'first_name' }, { accessor: 'last_name' }, { accessor: 'email_address' }, { accessor: 'balance', render: (record) => <Badge size='lg' color={record.balance < 0 ? "red" : "green"}>$ {(record.balance / 100).toFixed(2)}</Badge> }]}
             records={accounts}
           />
         </Tabs.Panel>
 
         <Tabs.Panel pt={10} value="payments">
-        <Button fullWidth my={5} size="sm" onClick={toggle}>New</Button>
+          <Button fullWidth my={5} size="sm" onClick={toggle}>New</Button>
           <DataTable
             noRecordsText="No records to show"
             minHeight={250}
@@ -61,20 +101,45 @@ export default function Admin({ params }: { params: { orgid: string } }) {
               {
                 accessor: 'account_id',
                 render: (record) => {
-                  const similar = accounts.find((account) => {
-                    if (account.id == record.account_id) {
-                      return true
-                    }
-                  })
+                  const similar = findAccount(record.account_id)
                   if (similar) return `${similar.first_name} ${similar.last_name}`
                 }
-              }, { accessor: 'description' }, { accessor: 'amount', render: (record) => <>${Math.abs(record.amount/100).toFixed(2)}</> }, { accessor: 'true_amount', title: "Amount due" , render: (record) => <Badge size='lg' color={record.true_amount < 0 ? "red" : "green"}>$ {(record.true_amount/100).toFixed(2)}</Badge> },
+              }, { accessor: 'description' }, { accessor: 'amount', render: (record) => <>$ {Math.abs(record.amount / 100).toFixed(2)}</> }, { accessor: 'true_amount', title: "Amount due", render: (record) => <Badge size='lg' color={(record.approved ? (record.true_amount < 0 ? "red" : "green") : "yellow")}>$ {(record.true_amount / 100).toFixed(2)}</Badge> },
               { accessor: 'due_date', render: (record) => new Date(record.due_date).toDateString() }
             ]}
             records={transactions}
           />
         </Tabs.Panel>
 
+
+        <Tabs.Panel pt={10} value="reimbursements">
+          {/* <Button fullWidth my={5} size="sm" onClick={toggle}>New</Button> */}
+          <DataTable
+            noRecordsText="No records to show"
+            minHeight={250}
+            columns={[{ accessor: 'created_at', render: (record) => new Date(record.created_at).toDateString() },
+            {
+              accessor: 'description',
+            }, {
+              accessor: 'Account', render: (record) => {
+                const account = findAccount(record.ledger_transaction_json.account_id)
+                return `${account.first_name} ${account.last_name}`
+
+              }
+            }, { accessor: 'out_budget_id', title: "Budget", render: (record) => findBudget(record.out_budget_id).name }, { accessor: 'amount', render: (record) => <>$ {Math.abs(record.amount / 100).toFixed(2)}</> }, {
+              accessor: 'approve', render: () => {
+                return (<Group gap={5}><ActionIcon color="green" variant="filled" aria-label="Approve">
+                <IconCheck style={{ width: '70%', height: '70%' }} stroke={1.5} />
+              </ActionIcon><ActionIcon color="red" variant="filled" aria-label="Deny">
+                  <IconX style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                </ActionIcon></Group>)
+              }, title: "Approve"
+            },
+
+            ]}
+            records={reimbursements}
+          />
+        </Tabs.Panel>
       </Tabs>
     </>
   )

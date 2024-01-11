@@ -1,5 +1,5 @@
 'use client';
-import { ActionIcon, Badge, Button, Checkbox, Table, Text, Modal, Pill, Radio, Tabs, Card, Flex, Stack, Group, Input, SimpleGrid, Combobox, useCombobox, InputBase, NumberInput, ScrollArea, Menu, InputLabel, Box, rem, LoadingOverlay } from "@mantine/core";
+import { ActionIcon, Badge, Button, Checkbox, Table, Text, Modal, Pill, Radio, Tabs, Card, Flex, Stack, Group, Input, SimpleGrid, Combobox, useCombobox, InputBase, NumberInput, ScrollArea, Menu, InputLabel, Box, rem, LoadingOverlay, NumberFormatter } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useDisclosure, useListState } from "@mantine/hooks";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
@@ -15,15 +15,19 @@ export default function Budgets({ params }: { params: { orgid: string } }) {
   const viewport = useRef<HTMLDivElement>(null);
   const [inTransactions, setInTransactions] = useState([])
   const [outTransactions, setOutTransactions] = useState([])
-  const [activeBudget, setActiveBudget] = useState({ id: null })
+  const [activeBudget, setActiveBudget] = useState({ id: null, name: null, balance: 0 })
   const [reimbursementBudget, setReimbursementBudget] = useState({ id: null })
   const [newBudgetOpen, newBudgetHandler] = useDisclosure(false);
   const [loading, setLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState("expenses")
   const budgets_in = useCombobox({
     onDropdownClose: () => budgets_in.resetSelectedOption(),
   });
   const budgets_out = useCombobox({
     onDropdownClose: () => budgets_out.resetSelectedOption(),
+  });
+  const selectBudget = useCombobox({
+    onDropdownClose: () => selectBudget.resetSelectedOption(),
   });
   const [budgetTransferOpen, budgetTransferHandler] = useDisclosure(false)
   const [reimbursementOpen, reimbursementHandler] = useDisclosure(false);
@@ -88,7 +92,17 @@ export default function Budgets({ params }: { params: { orgid: string } }) {
       setOutTransactions([])
     }
 
-  }, [activeBudget])
+  }, [activeBudget.id])
+
+  useEffect(()=>{
+
+    if (outTransactions.length == 0 && inTransactions.length > 0) {
+      setActiveTab("revenue")
+    } else {
+      setActiveTab("expenses")
+    }
+
+  }, [inTransactions, outTransactions])
 
   function submitNewBudget(formData) {
     supabase.from('budget_accounts').insert(formData).select().then((res) => {
@@ -123,7 +137,7 @@ export default function Budgets({ params }: { params: { orgid: string } }) {
     }).select().then((res) => {
       budgetTransferHandler.close()
       reimbursementHandler.close()
-      setActiveBudget({ id: null })
+      setActiveBudget({ id: null, name: null, balance: null })
       supabase.from('budget_accounts').select().eq('org_id', params.orgid).order('name').then((res) => {
         const public_budgets = res.data.filter((budget) => {
           if (budget.private == false) {
@@ -148,7 +162,7 @@ export default function Budgets({ params }: { params: { orgid: string } }) {
   const findBudget = useMemo(() => {
     const budgetFinder = (budget_id) => {
       const budget = budgets.find((budget) => budget.id === budget_id)
-      return budget ? budget.name : null
+      return budget ? budget : { name: null }
     }
     return budgetFinder
   }, [budgets])
@@ -198,7 +212,7 @@ export default function Budgets({ params }: { params: { orgid: string } }) {
                   size="sm"
                   my={5}
                 >
-                  {<Text>{findBudget(budgetTransfer.values.out_budget_id)}</Text> || <Input.Placeholder>Pick value</Input.Placeholder>}
+                  {<Text>{findBudget(budgetTransfer.values.out_budget_id).name}</Text> || <Input.Placeholder>Pick value</Input.Placeholder>}
                 </InputBase>
               </Combobox.Target>
 
@@ -233,7 +247,7 @@ export default function Budgets({ params }: { params: { orgid: string } }) {
                   // size="sm"
                   my={5}
                 >
-                  {<Text>{findBudget(budgetTransfer.values.in_budget_id)}</Text> || <Input.Placeholder>Pick value</Input.Placeholder>}
+                  {<Text>{findBudget(budgetTransfer.values.in_budget_id).name}</Text> || <Input.Placeholder>Pick value</Input.Placeholder>}
                 </InputBase>
               </Combobox.Target>
 
@@ -260,7 +274,7 @@ export default function Budgets({ params }: { params: { orgid: string } }) {
 
       </Modal>
       <Modal opened={reimbursementOpen} onClose={reimbursementHandler.close} title={
-        <Text>Request money from <Text span fw={700}>{findBudget(reimbursementRequest.values.out_budget_id)}</Text> budget</Text>
+        <Text>Request money from <Text span fw={700}>{findBudget(reimbursementRequest.values.out_budget_id).name}</Text> budget</Text>
       }>
         <form onSubmit={reimbursementRequest.onSubmit(createTransfer)}>
 
@@ -280,54 +294,53 @@ export default function Budgets({ params }: { params: { orgid: string } }) {
       </Modal>
       <LoadingOverlay visible={loading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
       {/* <Group mb={20} gap={10}><Button onClick={newBudgetHandler.open}>Create new budget</Button><Button onClick={budgetTransferHandler.open}>Transfer</Button></Group> */}
-      <Flex className="flex-1 flex-wrap" gap={10} mb={20}>
-        {budgets.map((item) => {
-          return (<Card key={item.id} radius={'md'} withBorder={(item.id == activeBudget.id)} >
-            <Stack gap={0}>
+      <Combobox
+      store={selectBudget}
+      onOptionSubmit={(val) => {
+        // setValue(val);
+        setActiveBudget(findBudget(val))
+        selectBudget.closeDropdown();
+      }}
+    >
+      <Combobox.Target>
+        <InputBase
+          component="button"
+          type="button"
+          size='lg'
+          mb={10}
+          pointer
+          rightSection={<Combobox.Chevron />}
+          rightSectionPointerEvents="none"
+          onClick={() => selectBudget.toggleDropdown()}
+        >
+          {(activeBudget.name ? <Text size="lg">{activeBudget.name} (<NumberFormatter value={(activeBudget.balance / 100).toFixed(2)} prefix="$" thousandSeparator/>)</Text> : null) || <Input.Placeholder>Choose a budget</Input.Placeholder>}
+        </InputBase>
+      </Combobox.Target>
 
-              <Group gap={20}><Text size='sm'>{item.name} (<Text span fw={700}>${(item.balance / 100).toFixed(2)}</Text>)</Text>
+      <Combobox.Dropdown>
+        <Combobox.Options>{
+          
+          budgets.map((item) => (
+            <Combobox.Option value={item.id} key={item.id}>
+              <Text size="lg">{item.name} (<NumberFormatter value={(item.balance / 100).toFixed(2)} prefix="$" thousandSeparator/>)</Text>
+              
+              
+            </Combobox.Option>
+          ))
+          
+          }</Combobox.Options>
+      </Combobox.Dropdown>
+    </Combobox>
+    {(activeBudget.id ? (<Button mb={10} fullWidth
+    onClick={() => {
+                    reimbursementRequest.setFieldValue('in_budget_id', reimbursementBudget.id)
+                    reimbursementRequest.setFieldValue('out_budget_id', activeBudget.id)
+                    reimbursementHandler.open()
+                  }}
+    > Request reimbursement </Button>) : null)}
 
-              </Group>
-              <Group mt={10} gap={10}>
-                <Checkbox size={'xs'}
-                  labelPosition={"left"}
-                  checked={item.id == activeBudget.id}
-                  onChange={(e) => e.currentTarget.checked ? setActiveBudget(item) : setActiveBudget({ id: null })}
-                  label="Show"
-                  fw={600} className="border-solid p-2 border-slate-600	hover:bg-slate-700 rounded-md">
-
-
-                </Checkbox>
-                <Menu>
-                  <Menu.Target>
-                    <Box component={Group} className="border-solid p-2 border-slate-600	hover:bg-slate-700 rounded-md">
-                      <Text size="xs" fw={600}>Menu</Text>
-                    </Box>
-                  </Menu.Target>
-                  <Menu.Dropdown>
-                    <Menu.Item component="button" onClick={() => {
-                      reimbursementRequest.setFieldValue('in_budget_id', reimbursementBudget.id)
-                      reimbursementRequest.setFieldValue('out_budget_id', item.id)
-                      reimbursementHandler.open()
-                    }}>
-                      Request reimbursement
-                    </Menu.Item>
-                  </Menu.Dropdown>
-                </Menu>
-                {/* <Button size="xs" variant={(activeBudget.id == item.id ? 'light' : 'transparent')}
-                  onClick={() => setActiveBudget(item)}
-                ></Button> */}
-
-
-              </Group>
-            </Stack>
-          </Card>)
-        })}
-      </Flex>
-
-
-     {activeBudget.id ? ( <Tabs variant="outline" defaultValue="expenses" ref={viewport}>
-        <Tabs.List>
+     {activeBudget.id ? ( <Tabs value={activeTab} onChange={setActiveTab} variant='default' defaultValue="expenses" ref={viewport}>
+        <Tabs.List grow>
           <Tabs.Tab value="expenses">
             Expenses
           </Tabs.Tab>
@@ -344,7 +357,7 @@ export default function Budgets({ params }: { params: { orgid: string } }) {
                 {/* <Table.Th>Date</Table.Th> */}
                 <Table.Th>Description</Table.Th>
                 <Table.Th>Amount</Table.Th>
-                <Table.Th>Paid to</Table.Th>
+                {/* <Table.Th>Paid to</Table.Th> */}
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -357,9 +370,9 @@ export default function Budgets({ params }: { params: { orgid: string } }) {
                     <Table.Td>
                       $ {(value.amount / 100).toFixed(2)}
                     </Table.Td>
-                    <Table.Td>
-                    {findBudget(value.in_budget_id)}
-                    </Table.Td>
+                    {/* <Table.Td>
+                    {findBudget(value.in_budget_id).name}
+                    </Table.Td> */}
 
                     {/* <Table.Td><Input variant="unstyled"></Input></Table.Td> */}
                   </Table.Tr>
@@ -372,14 +385,14 @@ export default function Budgets({ params }: { params: { orgid: string } }) {
         </Tabs.Panel>
 
         <Tabs.Panel value="revenue" py={10}>
-        <Table>
+        <Table stickyHeader>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Date</Table.Th>
                 {/* <Table.Th>Date</Table.Th> */}
-                <Table.Th>Description</Table.Th>
+                <Table.Th >Description</Table.Th>
                 <Table.Th>Amount</Table.Th>
-                <Table.Th>Recieved from</Table.Th>
+                {/* <Table.Th>Recieved from</Table.Th> */}
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -392,9 +405,9 @@ export default function Budgets({ params }: { params: { orgid: string } }) {
                     <Table.Td>
                       $ {(value.amount / 100).toFixed(2)}
                     </Table.Td>
-                    <Table.Td>
-                      {findBudget(value.out_budget_id)}
-                    </Table.Td>
+                    {/* <Table.Td>
+                      {findBudget(value.out_budget_id).name}
+                    </Table.Td> */}
 
                     {/* <Table.Td><Input variant="unstyled"></Input></Table.Td> */}
                   </Table.Tr>
@@ -406,10 +419,60 @@ export default function Budgets({ params }: { params: { orgid: string } }) {
 
         </Tabs.Panel>
 
-      </Tabs>) : <Text my={50} className="text-center">Select a budget to show transactions</Text>}
+      </Tabs>) : <Text my={50} className="text-center">Select a budget to request a reimbursement <br></br> or see transactions</Text>}
 
     </>
   )
 
 }
 
+
+
+      
+     
+// <Flex className="flex-1 flex-wrap" gap={10} mb={20}>
+
+        
+// {budgets.map((item) => {
+//   return (<Card key={item.id} radius={'md'} withBorder={(item.id == activeBudget.id)} >
+//     <Stack gap={0}>
+
+//       <Group gap={20}><Text size='sm'>{item.name} (<Text span fw={700}>${(item.balance / 100).toFixed(2)}</Text>)</Text>
+
+//       </Group>
+//       <Group mt={10} gap={10}>
+//         <Checkbox size={'xs'}
+//           labelPosition={"left"}
+//           checked={item.id == activeBudget.id}
+//           onChange={(e) => e.currentTarget.checked ? setActiveBudget(item) : setActiveBudget({ id: null })}
+//           label="Show"
+//           fw={600} className="border-solid p-2 border-slate-600	hover:bg-slate-700 rounded-md">
+
+
+//         </Checkbox>
+//         <Menu>
+//           <Menu.Target>
+//             <Box component={Group} className="border-solid p-2 border-slate-600	hover:bg-slate-700 rounded-md">
+//               <Text size="xs" fw={600}>Menu</Text>
+//             </Box>
+//           </Menu.Target>
+//           <Menu.Dropdown>
+//             <Menu.Item component="button" onClick={() => {
+//               reimbursementRequest.setFieldValue('in_budget_id', reimbursementBudget.id)
+//               reimbursementRequest.setFieldValue('out_budget_id', item.id)
+//               reimbursementHandler.open()
+//             }}>
+//               Request reimbursement
+//             </Menu.Item>
+//           </Menu.Dropdown>
+//         </Menu>
+//         {/* <Button size="xs" variant={(activeBudget.id == item.id ? 'light' : 'transparent')}
+//           onClick={() => setActiveBudget(item)}
+//         ></Button> */}
+
+
+//       </Group>
+//     </Stack>
+//   </Card>)
+// })}
+// </Flex>
