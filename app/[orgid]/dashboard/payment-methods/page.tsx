@@ -4,7 +4,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Card, Image, Text, Badge, Button, Group, SimpleGrid, Title, Flex, Skeleton, Pill, Space } from '@mantine/core';
 import { usePlaidLink, PlaidLinkOnSuccess } from "react-plaid-link";
 
-export default function Dashboard() {
+export default function Dashboard({ params }: { params: { orgid: string } }) {
     const [bankAccounts, setBankAccounts] = useState([]);
     const supabase = createClientComponentClient()
     const [errors, setErrors] = useState({
@@ -16,7 +16,7 @@ export default function Dashboard() {
         token: plaidToken,
         onSuccess: async (public_token, metadata) => {
             setErrors({ ...errors, accounts_loading: true })
-            const response = await fetch(`/dashboard/payment-methods/api/exchange?public_token=${public_token}`).then(async (res) => {
+            const response = await fetch(`/${params.orgid}/dashboard/payment-methods/api/exchange?public_token=${public_token}`).then(async (res) => {
                 const json = await res.json()
                 supabase
                 .from('bank_accounts')
@@ -40,7 +40,7 @@ export default function Dashboard() {
 
     const newBankAccount = async () => {
         setErrors({ ...errors, new_loading: true })
-        const response = await fetch(`/dashboard/payment-methods/api/link`).then((res) => {
+        const response = await fetch(`/${params.orgid}/dashboard/payment-methods/api/link`).then((res) => {
             return res.json()
         });
         await setPlaidToken(response.link_token)
@@ -48,7 +48,7 @@ export default function Dashboard() {
 
     const updateBankAccount = async (id) => {
         setErrors({ ...errors, new_loading: true })
-        const response = await fetch(`/dashboard/payment-methods/api/link/update?bank_account=${id}`).then((res) => {
+        const response = await fetch(`/${params.orgid}/dashboard/payment-methods/api/link/update?bank_account=${id}`).then((res) => {
             return res.json()
         });
         await setPlaidToken(response.link_token)
