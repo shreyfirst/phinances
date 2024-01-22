@@ -1,15 +1,16 @@
 'use client'
 
-import { Button, Checkbox, Container, Grid, Group, Input, Modal, NumberInput, SimpleGrid, Space, Stack, Table, Text, Title } from '@mantine/core';
+import { Button, Checkbox, Combobox, Container, Grid, Group, Input, InputBase, Modal, NumberInput, SimpleGrid, Space, Stack, Table, Text, Title, useCombobox } from '@mantine/core';
 import { useListState } from '@mantine/hooks';
 import { IconCurrencyDollar } from '@tabler/icons-react';
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useForm } from '@mantine/form';
 import squel from 'squel';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { DatePickerInput } from '@mantine/dates';
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
+
 
 type LedgerAccount = {
   id: string
@@ -25,6 +26,7 @@ type LedgerAccount = {
 
 interface AdminPaymentModalProps {
   accounts: LedgerAccount[]
+  budgets: any[]
   opened: boolean
   onClose(): any
   onNewTransactions(transactions: any): any
@@ -37,11 +39,16 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
   const [defaultAmount, setDefaultAmount] = useState(0)
   const [paymentLocked, setPaymentLocked] = useState(false)
   const checked = values.filter((value) => value.checked == true)
-  
+  const budgets_in = useCombobox({
+    onDropdownClose: () => budgets_in.resetSelectedOption(),
+  });
+
   const paymentForm = useForm({
     initialValues: {
       type: 'charge',
       description: '',
+      in_budget_id: '',
+      out_budget_id: '',
       payments: [],
       due_date: dayjs().add(1, 'day')
     },
@@ -68,6 +75,17 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
 
   }, [props.accounts])
 
+  useEffect(() => {
+    if (props.budgets) {
+      props.budgets.map((value, index) => {
+        if (value.type == 'PAYMENT_REQUESTS') {
+          paymentForm.setFieldValue('out_budget_id', value.id)
+        }
+      })
+    }
+
+  }, [props.budgets])
+
   async function submitTransactions(data) {
 
     const query = await squel.insert()
@@ -80,10 +98,30 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
     await supabase.rpc('as_admin', {
       "sql_query": `WITH inserted AS ( ${query} RETURNING * )
     SELECT json_agg(t) FROM (SELECT * FROM inserted) t` })
-      .then((res) => {
+      .then(async (res) => {
         if (props.onNewTransactions) {
           props.onNewTransactions(res.data);
         }
+        const response_data: any[] = res.data
+        const budget_data = []
+        response_data.map((value, index) => {
+          budget_data.push({
+            ledger_transaction: value.id,
+            in_budget_id: paymentForm.values.in_budget_id,
+            out_budget_id: paymentForm.values.out_budget_id,
+            description: paymentForm.values.description,
+            amount: Math.abs(value.amount)
+          })
+        })
+        const budget_query = await squel.insert()
+          .into("budget_transactions")
+          .setFieldsRows(budget_data)
+          .toString()
+
+        await supabase.rpc('as_admin', {
+          "sql_query": `WITH inserted AS ( ${budget_query} RETURNING * )
+        SELECT json_agg(t) FROM (SELECT * FROM inserted) t` })
+
         setLoading(false)
         closeModal()
       })
@@ -95,6 +133,16 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
     })
     return (<Text size='sm'>{acct.first_name} {acct.last_name}</Text>)
   }
+
+  const findBudget = useMemo(() => {
+    const budgetFinder = (budget_id) => {
+      if (props.budgets) {
+        const budget = props.budgets.find((budget) => budget.id === budget_id)
+        return budget ? budget : { name: null }
+      }
+    }
+    return budgetFinder
+  }, [props.budgets])
 
   const closeModal = () => {
     paymentForm.reset()
@@ -121,7 +169,7 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
     })
     paymentForm.validate()
     if (paymentForm.isValid() == true) {
-      console.log(paymentForm.values.payments)
+      // console.log(paymentForm.values.payments)
       setPaymentLocked(true)
     } else {
       ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -161,7 +209,7 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
             valueFormat='ddd, MMM D, YYYY'
             description="Members will be reminded every day after this date to pay"
             {...paymentForm.getInputProps('due_date')}
-          /> : null)} 
+          /> : null)}
 
           <Input.Wrapper
             required
@@ -203,7 +251,13 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
                 }
               </Group>)
             })}
+
+
+
+
           </Input.Wrapper>
+
+
           <Button fullWidth onClick={validate}>{paymentLocked ? "Edit payment configuration" : "Review"}</Button>
 
 
@@ -226,9 +280,43 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
                 </Table.Tr>
               ))}</Table.Tbody>
             </Table>
+            <Input.Wrapper mb={20} required label="Transfer to">
+
+              <Combobox
+                store={budgets_in}
+                onOptionSubmit={(val) => {
+                  paymentForm.setFieldValue('in_budget_id', val)
+                  budgets_in.closeDropdown();
+                }}
+              // size="xs"
+              >
+                <Combobox.Target>
+                  <InputBase
+                    component="button"
+                    type="button"
+                    pointer
+                    rightSection={<Combobox.Chevron />}
+                    rightSectionPointerEvents="none"
+                    onClick={() => budgets_in.toggleDropdown()}
+                    // size="sm"
+                    my={5}
+                  >
+                    {<Text>{(props.budgets ? findBudget(paymentForm.values.in_budget_id).name : "")}</Text> || <Input.Placeholder>Pick value</Input.Placeholder>}
+                  </InputBase>
+                </Combobox.Target>
+
+                <Combobox.Dropdown>
+                  <Combobox.Options>{(props.budgets ? props.budgets.map((item) => (
+                    <Combobox.Option value={item.id} key={item.id}>
+                      {item.name}
+                    </Combobox.Option>
+                  )) : null)}</Combobox.Options>
+                </Combobox.Dropdown>
+              </Combobox>
+            </Input.Wrapper>
             <form onSubmit={paymentForm.onSubmit(submitTransactions)}>
 
-              <Button type='submit' fullWidth variant='filled' disabled={paymentForm.values.payments.length == 0}>Authorize</Button>
+              <Button type='submit' fullWidth variant='filled' disabled={(paymentForm.values.payments.length == 0 || paymentForm.values.in_budget_id.length == 0)}>Authorize</Button>
             </form>
           </>
         )}

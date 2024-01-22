@@ -63,13 +63,26 @@ export default function Admin({ params }: { params: { orgid: string } }) {
 
   async function reimbursementAction(approved: boolean, record: any) {
     if (approved) {
-
+      const expense_budget = await budgets.find((budget)=>budget.type=="EXPENSE")
+      const orginator = await findAccount(record.ledger_transaction_json.account_id)
+      const [budgetTransaction, ledgerTransaction] = await Promise.all([
+        supabase.from('budget_transactions').insert({
+          in_budget_id: expense_budget.id,
+          out_budget_id: record.in_budget_id,
+          amount: record.amount,
+          description: `Reimbursement to ${orginator.first_name} ${orginator.last_name} for ${record.description}`,
+        }).select(),
+        supabase.from('ledger_transactions').update({
+          approved: true
+        }).eq('id', record.ledger_transaction_json.id).select()
+      ])
+      console.log("budgetTransaction", budgetTransaction, "ledgerTransaction", ledgerTransaction)
     }
   }
 
   return (
     <>
-      <AdminPaymentModal accounts={accounts} opened={opened} onClose={close} onNewTransactions={handleNewTransactions} title="" centered />
+      <AdminPaymentModal budgets={budgets} accounts={accounts} opened={opened} onClose={close} onNewTransactions={handleNewTransactions} title="" centered />
       <Tabs variant='outline' defaultValue="accounts">
         <Tabs.List>
           <Tabs.Tab value="accounts" >
@@ -112,7 +125,7 @@ export default function Admin({ params }: { params: { orgid: string } }) {
         </Tabs.Panel>
 
 
-        <Tabs.Panel pt={10} value="reimbursements">
+        <Tabs.Panel pt={10} value="reimbursements"> 
           {/* <Button fullWidth my={5} size="sm" onClick={toggle}>New</Button> */}
           <DataTable
             noRecordsText="No records to show"
@@ -127,8 +140,8 @@ export default function Admin({ params }: { params: { orgid: string } }) {
 
               }
             }, { accessor: 'out_budget_id', title: "Budget", render: (record) => findBudget(record.out_budget_id).name }, { accessor: 'amount', render: (record) => <>$ {Math.abs(record.amount / 100).toFixed(2)}</> }, {
-              accessor: 'approve', render: () => {
-                return (<Group gap={5}><ActionIcon color="green" variant="filled" aria-label="Approve">
+              accessor: 'approve', render: (record) => {
+                return (<Group gap={5}><ActionIcon color="green" variant="filled" onClick={()=>reimbursementAction(true, record)} aria-label="Approve">
                 <IconCheck style={{ width: '70%', height: '70%' }} stroke={1.5} />
               </ActionIcon><ActionIcon color="red" variant="filled" aria-label="Deny">
                   <IconX style={{ width: '70%', height: '70%' }} stroke={1.5} />

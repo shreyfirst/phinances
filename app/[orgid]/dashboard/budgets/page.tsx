@@ -132,7 +132,7 @@ export default function Budgets({ params }: { params: { orgid: string } }) {
 
     supabase.from('budget_transactions').insert({
       ...formData,
-      ledger_transaction: transaction.id,
+      ledger_transaction: (transaction ? transaction.id : null),
       amount: (formData.amount * 100)
     }).select().then((res) => {
       budgetTransferHandler.close()
