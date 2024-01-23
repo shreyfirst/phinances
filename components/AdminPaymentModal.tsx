@@ -305,7 +305,7 @@ export default function AdminPaymentModal(props: AdminPaymentModalProps) {
                   </InputBase>
                 </Combobox.Target>
 
-                <Combobox.Dropdown>
+                <Combobox.Dropdown mah={300} style={{ overflowY: 'auto' }}>
                   <Combobox.Options>{(props.budgets ? props.budgets.map((item) => (
                     <Combobox.Option value={item.id} key={item.id}>
                       {item.name}

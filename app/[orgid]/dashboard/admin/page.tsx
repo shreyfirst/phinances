@@ -6,6 +6,7 @@ import { IconCheck, IconEdit, IconEye, IconTrash, IconX } from "@tabler/icons-re
 import { DataTable } from 'mantine-datatable';
 import { useEffect, useMemo, useState } from "react";
 import AdminPaymentModal from "@/components/AdminPaymentModal"
+import PaymentPlanModal from "@/components/PaymentPlanModal"
 
 export default function Admin({ params }: { params: { orgid: string } }) {
 
@@ -14,7 +15,9 @@ export default function Admin({ params }: { params: { orgid: string } }) {
   const [reimbursements, setReimbursements] = useState([])
   const [budgets, setBudgets] = useState([])
   const supabase = createClientComponentClient()
-  const [opened, { open, close, toggle }] = useDisclosure(false);
+  const [newOpened, newModal] = useDisclosure(false);
+  const [paymentPlanOpened, paymentPlanModal] = useDisclosure(false);
+  const [activeTransaction, setActiveTransaction] = useState({})
 
   useEffect(() => {
 
@@ -22,7 +25,7 @@ export default function Admin({ params }: { params: { orgid: string } }) {
       .then((res) => {
         setAccounts(res.data)
       })
-    supabase.rpc('as_admin', { "sql_query": "SELECT json_agg(t) FROM (select * from ledger_transactions order by due_date desc) t" })
+    supabase.rpc('as_admin', { "sql_query": "SELECT json_agg(t) FROM (select * from ledger_transactions where true_amount <> 0 order by due_date asc) t" })
       .then((res) => {
         setTransactions(res.data)
       })
@@ -63,7 +66,7 @@ export default function Admin({ params }: { params: { orgid: string } }) {
 
   async function reimbursementAction(approved: boolean, record: any) {
     if (approved) {
-      const expense_budget = await budgets.find((budget)=>budget.type=="EXPENSE")
+      const expense_budget = await budgets.find((budget) => budget.type == "EXPENSE")
       const orginator = await findAccount(record.ledger_transaction_json.account_id)
       const [budgetTransaction, ledgerTransaction] = await Promise.all([
         supabase.from('budget_transactions').insert({
@@ -82,7 +85,10 @@ export default function Admin({ params }: { params: { orgid: string } }) {
 
   return (
     <>
-      <AdminPaymentModal budgets={budgets} accounts={accounts} opened={opened} onClose={close} onNewTransactions={handleNewTransactions} title="" centered />
+      <AdminPaymentModal budgets={budgets} accounts={accounts} opened={newOpened} onClose={newModal.close} onNewTransactions={handleNewTransactions} title="" centered />
+
+      <PaymentPlanModal transaction={activeTransaction} budgets={budgets} accounts={accounts} opened={paymentPlanOpened} onClose={paymentPlanModal.close} onNewTransactions={handleNewTransactions} title="" centered />
+
       <Tabs variant='outline' defaultValue="accounts">
         <Tabs.List>
           <Tabs.Tab value="accounts" >
@@ -106,7 +112,7 @@ export default function Admin({ params }: { params: { orgid: string } }) {
         </Tabs.Panel>
 
         <Tabs.Panel pt={10} value="payments">
-          <Button fullWidth my={5} size="sm" onClick={toggle}>New</Button>
+          <Button fullWidth my={5} size="sm" onClick={newModal.toggle}>New</Button>
           <DataTable
             noRecordsText="No records to show"
             minHeight={250}
@@ -117,7 +123,13 @@ export default function Admin({ params }: { params: { orgid: string } }) {
                   const similar = findAccount(record.account_id)
                   if (similar) return `${similar.first_name} ${similar.last_name}`
                 }
-              }, { accessor: 'description' }, { accessor: 'amount', render: (record) => <>$ {Math.abs(record.amount / 100).toFixed(2)}</> }, { accessor: 'true_amount', title: "Amount due", render: (record) => <Badge size='lg' color={(record.approved ? (record.true_amount < 0 ? "red" : "green") : "yellow")}>$ {(record.true_amount / 100).toFixed(2)}</Badge> },
+              }, { accessor: 'description', width: 200 }, { accessor: 'amount', render: (record) => <>$ {Math.abs(record.amount / 100).toFixed(2)}</> }, { accessor: 'true_amount', title: "Amount due", render: (record) => <Badge size='lg' color={(record.approved ? (record.true_amount < 0 ? "red" : "green") : "yellow")}>$ {(record.true_amount / 100).toFixed(2)}</Badge> },
+              {
+                accessor: 'payment_plan', render: (record) => <Button onClick={() => {
+                  setActiveTransaction(record)
+                  paymentPlanModal.toggle()
+                }} size='xs'>Go</Button>
+              },
               { accessor: 'due_date', render: (record) => new Date(record.due_date).toDateString() }
             ]}
             records={transactions}
@@ -125,7 +137,7 @@ export default function Admin({ params }: { params: { orgid: string } }) {
         </Tabs.Panel>
 
 
-        <Tabs.Panel pt={10} value="reimbursements"> 
+        <Tabs.Panel pt={10} value="reimbursements">
           {/* <Button fullWidth my={5} size="sm" onClick={toggle}>New</Button> */}
           <DataTable
             noRecordsText="No records to show"
@@ -141,11 +153,11 @@ export default function Admin({ params }: { params: { orgid: string } }) {
               }
             }, { accessor: 'out_budget_id', title: "Budget", render: (record) => findBudget(record.out_budget_id).name }, { accessor: 'amount', render: (record) => <>$ {Math.abs(record.amount / 100).toFixed(2)}</> }, {
               accessor: 'approve', render: (record) => {
-                return (<Group gap={5}><ActionIcon color="green" variant="filled" onClick={()=>reimbursementAction(true, record)} aria-label="Approve">
-                <IconCheck style={{ width: '70%', height: '70%' }} stroke={1.5} />
-              </ActionIcon><ActionIcon color="red" variant="filled" aria-label="Deny">
-                  <IconX style={{ width: '70%', height: '70%' }} stroke={1.5} />
-                </ActionIcon></Group>)
+                return (<Group gap={5}><ActionIcon color="green" variant="filled" onClick={() => reimbursementAction(true, record)} aria-label="Approve">
+                  <IconCheck style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                </ActionIcon><ActionIcon color="red" variant="filled" aria-label="Deny">
+                    <IconX style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                  </ActionIcon></Group>)
               }, title: "Approve"
             },
 
